@@ -20,4 +20,7 @@ size_t FileWrite(void* buf, size_t size, size_t foffset);
 /** Gets the size of the opened file */
 size_t FileGetSize();
 
+/** Gets remaining space on SD card in bytes */
+uint64_t RemainingStorageSpace();
+
 void FileClose();

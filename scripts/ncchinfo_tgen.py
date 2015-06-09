@@ -227,7 +227,7 @@ def parseNCCHSection(header, type, uses7xCrypto, doPrint, tab):
     return struct.pack('<16s16sIIII', str(counter), str(keyY), sectionMb, 0, 0, uses7xCrypto)
 
 def genOutName(titleId, partitionName, sectionName):
-    outName = b'/%s.%s.%s.xorpad' % (titleId, partitionName, sectionName)
+    outName = b'/%s.%s.%s.xorpad' % (fh.name, partitionName, sectionName)
     if len(outName) > 112:
         print "Output file name too large. This shouldn't happen."
         sys.exit()
@@ -238,10 +238,10 @@ def genOutName(titleId, partitionName, sectionName):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print 'usage: ncchinfo_gen.py files..'
+        print 'usage: ncchinfo_tgen.py files..'
         print '  Supports parsing both CCI(.3ds) and NCCH files.'
         print '  Wildcards are supported'
-        print '  Example: ncchinfo_gen.py *.ncch SM3DL.3ds'
+        print '  Example: ncchinfo_tgen.py *.ncch SM3DL.3ds'
         sys.exit()
     
     inpFiles = []

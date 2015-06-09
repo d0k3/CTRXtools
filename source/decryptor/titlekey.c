@@ -16,7 +16,7 @@ static const u8 common_keyy[6][16] = {
 u32 DecryptTitlekeys(void)
 {
 	EncKeysInfo *info = (EncKeysInfo*)0x20316000;
-	
+	newline(3);
 	Debug("Opening encTitleKeys.bin ...");
 	if(!FileOpen("/encTitleKeys.bin"))
 	{

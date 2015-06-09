@@ -15,6 +15,7 @@ u32 NcchPadgen()
 
     if (FileOpen("/slot0x25KeyX.bin")) {
         u8 slot0x25KeyX[16] = {0};
+		newline(3);
         Debug("Opening slot0x25KeyX.bin ...");
         
         bytesRead = FileRead(&slot0x25KeyX, 16, 0);
@@ -81,6 +82,7 @@ u32 SdPadgen()
 
     // Load console 0x34 keyY from movable.sed if present on SD card
     if (FileOpen("/movable.sed")) {
+		newline(3);
         Debug("Loading custom movable.sed");
         bytesRead = FileRead(&movable_seed, 0x120, 0);
         FileClose();
@@ -97,6 +99,7 @@ u32 SdPadgen()
         use_aeskey(0x34);
     }
 
+	newline(3);
     Debug("Opening SDinfo.bin ...");
     if (!FileOpen("/SDinfo.bin")) {
         Debug("Could not open SDinfo.bin!");
@@ -146,6 +149,7 @@ static u8* FindNandCtr()
 
     for (u32 i = 0; i < version_ctrs_len; i++) {
         if (*(u32*)version_ctrs[i] == 0x5C980) {
+			newline(3);
             Debug("System version %s", versions[i]);
             return (u8*)(version_ctrs[i] + 0x30);
         }
@@ -154,6 +158,7 @@ static u8* FindNandCtr()
     // If value not in previous list start memory scanning (test range)
     for (u8* c = (u8*)0x080D8FFF; c > (u8*)0x08000000; c--) {
         if (*(u32*)c == 0x5C980 && *(u32*)(c + 1) == 0x800005C9) {
+			newline(3);
             Debug("CTR Start 0x%08X", c + 0x30);
             return c + 0x30;
         }

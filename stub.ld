@@ -4,7 +4,7 @@ ENTRY(_start)
 
 MEMORY
   {
-  ram : ORIGIN = 0x08000000, LENGTH = 128K
+  ram : ORIGIN = 0x23F00000, LENGTH = 128K
   }
 
 SECTIONS
@@ -14,7 +14,7 @@ SECTIONS
 		__text_start = . ;
 		KEEP (*(.init))
 		. = ALIGN(4);  /* REQUIRED. LD is flaky without it. */
-		} >ram = 0xff
+	} >ram = 0xff
 	.plt : { *(.plt) } >ram = 0xff
 
 	.text :   /* ALIGN (4): */

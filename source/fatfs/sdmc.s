@@ -494,8 +494,8 @@ SD_Init:                                @ CODE XREF: sub_80A244C+16p
                 LDR     R4, =dword_80A6F58
                 ADD     R0, R4, #0
                 BL      sub_80A38D4
-                MOV     R0, #0xFA
-                LSL     R0, R0, #2
+                MOV     R0, #0xF0
+                LSL     R0, R0, #8
                 BL      sub_80A3910
                 MOV     R1, #0          @ cmd
                 ADD     R2, R1, #0      @ args
@@ -822,8 +822,8 @@ Nand_Init:                              @ CODE XREF: sub_80A244C+12p
                 LDR     R4, =dword_80A6F20
                 ADD     R0, R4, #0
                 BL      sub_80A38D4
-                MOV     R0, #0xFA
-                LSL     R0, R0, #2
+                MOV     R0, #0xF0
+                LSL     R0, R0, #8
                 BL      sub_80A3910
                 MOV     R1, #0          @ cmd
                 ADD     R0, R4, #0      @ ctx
