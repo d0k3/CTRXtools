@@ -90,7 +90,17 @@ u32 UnmountSd()
 
 void DrawMenu(MenuInfo* currMenu, u32 index, bool fullDraw, bool subMenu)
 {
-    u32 emunand_state = CheckEmuNand();
+    int emunand_number = 0;
+    if (currMenu->entries[index].param & N_EMUNAND1) {
+        emunand_number = 1;
+    } else if (currMenu->entries[index].param & N_EMUNAND2) {
+        emunand_number = 2;
+    } else if (currMenu->entries[index].param & N_EMUNAND3) {
+        emunand_number = 3;
+    } else if (currMenu->entries[index].param & N_EMUNAND4) {
+        emunand_number = 4;
+    }
+    u32 emunand_state = CheckEmuNand(emunand_number);
     bool top_screen = true;
     u32 menublock_x0 = (top_screen) ? 76 : 36;
     u32 menublock_x1 = (top_screen) ? 52 : 12;
@@ -111,6 +121,9 @@ void DrawMenu(MenuInfo* currMenu, u32 index, bool fullDraw, bool subMenu)
             DrawStringF(menublock_x1, SCREEN_HEIGHT - 40, top_screen, "Work directory: %s", WORK_DIR);
             DirClose();
         }
+        if (emunand_number > 0) {
+            DrawStringF(menublock_x1, SCREEN_HEIGHT - 50, top_screen, "Emunand Number: %d", emunand_number);
+        }
     }
     
     if (!top_screen)
@@ -124,7 +137,16 @@ void DrawMenu(MenuInfo* currMenu, u32 index, bool fullDraw, bool subMenu)
 
 u32 ProcessEntry(MenuEntry* entry)
 {
-    bool emunand    = entry->param & N_EMUNAND;
+    int emunand_number = 0;
+    if (entry->param & N_EMUNAND1) {
+        emunand_number = 1;
+    } else if (entry->param & N_EMUNAND2) {
+        emunand_number = 2;
+    } else if (entry->param & N_EMUNAND3) {
+        emunand_number = 3;
+    } else if (entry->param & N_EMUNAND4) {
+        emunand_number = 4;
+    }
     bool nand_force = entry->param & N_FORCENAND;
     bool warning    = entry->param & N_NANDWRITE;
     
@@ -135,19 +157,19 @@ u32 ProcessEntry(MenuEntry* entry)
     if (warning) {
         u32 unlockSequenceEmu[] = { BUTTON_LEFT, BUTTON_RIGHT, BUTTON_DOWN, BUTTON_UP, BUTTON_A };
         u32 unlockSequenceSys[] = { BUTTON_LEFT, BUTTON_UP, BUTTON_RIGHT, BUTTON_UP, BUTTON_A };
-        u32 unlockLvlMax = ((emunand) ? sizeof(unlockSequenceEmu) : sizeof(unlockSequenceSys)) / sizeof(u32);
-        u32* unlockSequence = (emunand) ? unlockSequenceEmu : unlockSequenceSys;
+        u32 unlockLvlMax = ((emunand_number > 0) ? sizeof(unlockSequenceEmu) : sizeof(unlockSequenceSys)) / sizeof(u32);
+        u32* unlockSequence = (emunand_number > 0) ? unlockSequenceEmu : unlockSequenceSys;
         u32 unlockLvl = 0;
         #ifdef USE_THEME
-        LoadThemeGfx((emunand) ? GFX_DANGER_E : GFX_DANGER_S, false);
+        LoadThemeGfx((emunand_number > 0) ? GFX_DANGER_E : GFX_DANGER_S, false);
         #endif
         DebugClear();
         Debug("You selected \"%s\".", entry->name);
-        Debug("This feature writes to the %s.", (emunand) ? "EmuNAND" : "SysNAND");
+        Debug("This feature writes to the %s.", (emunand_number > 0) ? "EmuNAND" : "SysNAND");
         Debug("Doing this is potentially dangerous!");
         Debug("");
         Debug("If you wish to proceed, enter:");
-        Debug((emunand) ? "<Left>, <Right>, <Down>, <Up>, <A>" : "<Left>, <Up>, <Right>, <Up>, <A>");
+        Debug((emunand_number > 0) ? "<Left>, <Right>, <Down>, <Up>, <A>" : "<Left>, <Up>, <Right>, <Up>, <A>");
         Debug("");
         Debug("(B to return, START to reboot)");
         while (true) {
@@ -174,7 +196,7 @@ u32 ProcessEntry(MenuEntry* entry)
     LoadThemeGfx(GFX_PROGRESS, false);
     #endif
     DebugClear();
-    res = (SetNand(emunand, nand_force) == 0) ? (*(entry->function))(entry->param) : 1;
+    res = (SetNand(emunand_number, nand_force) == 0) ? (*(entry->function))(entry->param) : 1;
     Debug("%s: %s!", entry->name, (res == 0) ? "succeeded" : "failed");
     Debug("");
     Debug("Press B to return, START to reboot.");
