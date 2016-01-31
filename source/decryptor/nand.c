@@ -78,7 +78,11 @@ u32 SetNand(int emunand_number, bool force_emunand)
                 return 0;
             case EMUNAND_REDNAND:
                 emunand_header = 1;
-                emunand_offset = 1;
+                if (getMMCDevice(0)->total_size > EMUNAND_MULTI_OFFSET_O3DS) {
+                    emunand_offset = EMUNAND_MULTI_OFFSET_N3DS * (emunand_number - 1 ) + 1;
+                } else {
+                    emunand_offset = EMUNAND_MULTI_OFFSET_O3DS * (emunand_number - 1 ) + 1;
+                }
                 Debug("Using RedNAND @ %06X/%06X", emunand_header, emunand_offset);
                 return 0;
             default:
