@@ -163,7 +163,7 @@ u32 OutputFileNameSelector(char* filename, const char* basename, char* extension
         // build and output file name (plus "(!)" if existing)
         numstr[0] = (fn_num > 0) ? '0' + fn_num : '\0';
         snprintf(filename, 63, "%s%s%s", bases[fn_id], numstr, extstr);
-        if (exists = FileOpen(filename))
+        if ((exists = FileOpen(filename)))
             FileClose();
         Debug("\r%s%s", filename, (exists) ? " (!)" : "");
         // user input routine

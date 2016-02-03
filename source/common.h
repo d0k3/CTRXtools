@@ -43,20 +43,6 @@
 #define WORK_DIR "/Decrypt9"
 #define LOG_FILE "Decrypt9.log"
 
-inline char* strupper(const char* str) {
-    char* buffer = (char*)malloc(strlen(str) + 1);
-    for (int i = 0; i < strlen(str); ++i)
-        buffer[i] = toupper((unsigned)str[i]);
-    return buffer;
-}
-
-inline char* strlower(const char* str) {
-    char* buffer = (char*)malloc(strlen(str) + 1);
-    for (int i = 0; i < strlen(str); ++i)
-        buffer[i] = tolower((unsigned)str[i]);
-    return buffer;
-}
-
 inline u32 strchrcount(const char* str, char symbol) {
     u32 count = 0;
     for (u32 i = 0; str[i] != '\0'; i++) {

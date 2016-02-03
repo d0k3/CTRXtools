@@ -14,7 +14,8 @@
 #define F_RANDSEED    (1<<6)
 #define F_MOVABLE     (1<<7)
 #define F_SEEDSAVE    (1<<8)
-#define F_UPDATESAVE  (1<<9)
+#define F_NAGSAVE     (1<<9)
+#define F_NNIDSAVE    (1<<10)
 
 typedef struct {
     char name[32];

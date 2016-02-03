@@ -238,7 +238,7 @@ MenuInfo menu[] =
         }
     },
     {
-        "File Dump... (SysNAND)", 9, // ID 10
+        "File Dump... (SysNAND)", 10, // ID 10
         {
             { "Dump ticket.db",               &DumpFile,             F_TICKET },
             { "Dump title.db",                &DumpFile,             F_TITLE },
@@ -248,11 +248,11 @@ MenuInfo menu[] =
             { "Dump LocalFriendCodeSeed_B",   &DumpFile,             F_LOCALFRIEND },
             { "Dump rand_seed",               &DumpFile,             F_RANDSEED },
             { "Dump movable.sed",             &DumpFile,             F_MOVABLE },
-            { "Dump updtsave.bin",            &DumpFile,             F_UPDATESAVE }
+            { "Dump nagsave.bin",             &DumpFile,             F_NAGSAVE },
+            { "Dump nnidsave.bin",            &DumpFile,             F_NNIDSAVE }
         }
     },
-    {
-        "File Dump... (EmuNAND1)", 10, // ID 11
+        "File Dump... (EmuNAND1)", 11, // ID 11
         {
             { "Dump ticket.db",               &DumpFile,             N_EMUNAND1 | F_TICKET },
             { "Dump title.db",                &DumpFile,             N_EMUNAND1 | F_TITLE },
@@ -263,7 +263,8 @@ MenuInfo menu[] =
             { "Dump rand_seed",               &DumpFile,             N_EMUNAND1 | F_RANDSEED },
             { "Dump movable.sed",             &DumpFile,             N_EMUNAND1 | F_MOVABLE },
             { "Dump seedsave.bin",            &DumpFile,             N_EMUNAND1 | F_SEEDSAVE },
-            { "Dump updtsave.bin",            &DumpFile,             N_EMUNAND1 | F_UPDATESAVE }
+            { "Dump nagsave.bin",             &DumpFile,             N_EMUNAND1 | F_NAGSAVE },
+            { "Dump nnidsave.bin",            &DumpFile,             N_EMUNAND1 | F_NNIDSAVE }
         }
     },
     {
@@ -278,7 +279,8 @@ MenuInfo menu[] =
             { "Dump rand_seed",               &DumpFile,             N_EMUNAND2 | F_RANDSEED },
             { "Dump movable.sed",             &DumpFile,             N_EMUNAND2 | F_MOVABLE },
             { "Dump seedsave.bin",            &DumpFile,             N_EMUNAND2 | F_SEEDSAVE },
-            { "Dump updtsave.bin",            &DumpFile,             N_EMUNAND2 | F_UPDATESAVE }
+            { "Dump nagsave.bin",             &DumpFile,             N_EMUNAND2 | F_NAGSAVE },
+            { "Dump nnidsave.bin",            &DumpFile,             N_EMUNAND2 | F_NNIDSAVE }
         }
     },
     {
@@ -293,7 +295,8 @@ MenuInfo menu[] =
             { "Dump rand_seed",               &DumpFile,             N_EMUNAND3 | F_RANDSEED },
             { "Dump movable.sed",             &DumpFile,             N_EMUNAND3 | F_MOVABLE },
             { "Dump seedsave.bin",            &DumpFile,             N_EMUNAND3 | F_SEEDSAVE },
-            { "Dump updtsave.bin",            &DumpFile,             N_EMUNAND3 | F_UPDATESAVE }
+            { "Dump nagsave.bin",             &DumpFile,             N_EMUNAND3 | F_NAGSAVE },
+            { "Dump nnidsave.bin",            &DumpFile,             N_EMUNAND3 | F_NNIDSAVE }
         }
     },
     {
@@ -308,11 +311,12 @@ MenuInfo menu[] =
             { "Dump rand_seed",               &DumpFile,             N_EMUNAND4 | F_RANDSEED },
             { "Dump movable.sed",             &DumpFile,             N_EMUNAND4 | F_MOVABLE },
             { "Dump seedsave.bin",            &DumpFile,             N_EMUNAND4 | F_SEEDSAVE },
-            { "Dump updtsave.bin",            &DumpFile,             N_EMUNAND4 | F_UPDATESAVE }
+            { "Dump nagsave.bin",             &DumpFile,             N_EMUNAND4 | F_NAGSAVE },
+            { "Dump nnidsave.bin",            &DumpFile,             N_EMUNAND4 | F_NNIDSAVE }
         }
     },
     {
-        "File Inject... (SysNAND)", 9, // ID 15
+        "File Inject... (SysNAND)", 10, // ID 15
         {
             { "Inject ticket.db",             &InjectFile,           N_NANDWRITE | F_TICKET },
             { "Inject title.db",              &InjectFile,           N_NANDWRITE | F_TITLE },
@@ -322,7 +326,8 @@ MenuInfo menu[] =
             { "Inject LocalFriendCodeSeed_B", &InjectFile,           N_NANDWRITE | F_LOCALFRIEND },
             { "Inject rand_seed",             &InjectFile,           N_NANDWRITE | F_RANDSEED },
             { "Inject movable.sed",           &InjectFile,           N_NANDWRITE | F_MOVABLE },
-            { "Inject updtsave.bin",          &InjectFile,           N_NANDWRITE | F_UPDATESAVE }
+            { "Inject nagsave.bin",           &InjectFile,           N_NANDWRITE | F_NAGSAVE },
+            { "Inject nnidsave.bin",          &InjectFile,           N_NANDWRITE | F_NNIDSAVE }
         }
     },
     {
@@ -337,7 +342,8 @@ MenuInfo menu[] =
             { "Inject rand_seed",             &InjectFile,           N_NANDWRITE | N_EMUNAND1 | F_RANDSEED },
             { "Inject movable.sed",           &InjectFile,           N_NANDWRITE | N_EMUNAND1 | F_MOVABLE },
             { "Inject seedsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND1 | F_SEEDSAVE },
-            { "Inject updtsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND1 | F_UPDATESAVE }
+            { "Inject nagsave.bin",           &InjectFile,           N_NANDWRITE | N_EMUNAND1 | F_NAGSAVE },
+            { "Inject nnidsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND1 | F_NNIDSAVE }
         }
     },
     {
@@ -352,7 +358,8 @@ MenuInfo menu[] =
             { "Inject rand_seed",             &InjectFile,           N_NANDWRITE | N_EMUNAND2 | F_RANDSEED },
             { "Inject movable.sed",           &InjectFile,           N_NANDWRITE | N_EMUNAND2 | F_MOVABLE },
             { "Inject seedsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND2 | F_SEEDSAVE },
-            { "Inject updtsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND2 | F_UPDATESAVE }
+            { "Inject nagsave.bin",           &InjectFile,           N_NANDWRITE | N_EMUNAND2 | F_NAGSAVE },
+            { "Inject nnidsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND2 | F_NNIDSAVE }
         }
     },
     {
@@ -367,7 +374,8 @@ MenuInfo menu[] =
             { "Inject rand_seed",             &InjectFile,           N_NANDWRITE | N_EMUNAND3 | F_RANDSEED },
             { "Inject movable.sed",           &InjectFile,           N_NANDWRITE | N_EMUNAND3 | F_MOVABLE },
             { "Inject seedsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND3 | F_SEEDSAVE },
-            { "Inject updtsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND3 | F_UPDATESAVE }
+            { "Inject nagsave.bin",           &InjectFile,           N_NANDWRITE | N_EMUNAND3 | F_NAGSAVE },
+            { "Inject nnidsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND3 | F_NNIDSAVE }
         }
     },
     {
@@ -382,7 +390,8 @@ MenuInfo menu[] =
             { "Inject rand_seed",             &InjectFile,           N_NANDWRITE | N_EMUNAND4 | F_RANDSEED },
             { "Inject movable.sed",           &InjectFile,           N_NANDWRITE | N_EMUNAND4 | F_MOVABLE },
             { "Inject seedsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND4 | F_SEEDSAVE },
-            { "Inject updtsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND4 | F_UPDATESAVE }
+            { "Inject nagsave.bin",           &InjectFile,           N_NANDWRITE | N_EMUNAND4 | F_NAGSAVE },
+            { "Inject nnidsave.bin",          &InjectFile,           N_NANDWRITE | N_EMUNAND4 | F_NNIDSAVE }
         }
     },
     {
