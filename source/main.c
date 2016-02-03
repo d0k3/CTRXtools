@@ -252,6 +252,7 @@ MenuInfo menu[] =
             { "Dump nnidsave.bin",            &DumpFile,             F_NNIDSAVE }
         }
     },
+    {
         "File Dump... (EmuNAND1)", 11, // ID 11
         {
             { "Dump ticket.db",               &DumpFile,             N_EMUNAND1 | F_TICKET },
