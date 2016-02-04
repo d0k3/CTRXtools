@@ -269,7 +269,7 @@ MenuInfo menu[] =
         }
     },
     {
-        "File Dump... (EmuNAND2)", 10, // ID 12
+        "File Dump... (EmuNAND2)", 11, // ID 12
         {
             { "Dump ticket.db",               &DumpFile,             N_EMUNAND2 | F_TICKET },
             { "Dump title.db",                &DumpFile,             N_EMUNAND2 | F_TITLE },
@@ -285,7 +285,7 @@ MenuInfo menu[] =
         }
     },
     {
-        "File Dump... (EmuNAND3)", 10, // ID 13
+        "File Dump... (EmuNAND3)", 11, // ID 13
         {
             { "Dump ticket.db",               &DumpFile,             N_EMUNAND3 | F_TICKET },
             { "Dump title.db",                &DumpFile,             N_EMUNAND3 | F_TITLE },
@@ -301,7 +301,7 @@ MenuInfo menu[] =
         }
     },
     {
-        "File Dump... (EmuNAND4)", 10, // ID 14
+        "File Dump... (EmuNAND4)", 11, // ID 14
         {
             { "Dump ticket.db",               &DumpFile,             N_EMUNAND4 | F_TICKET },
             { "Dump title.db",                &DumpFile,             N_EMUNAND4 | F_TITLE },
@@ -332,7 +332,7 @@ MenuInfo menu[] =
         }
     },
     {
-        "File Inject... (EmuNAND1)", 10, // ID 16
+        "File Inject... (EmuNAND1)", 11, // ID 16
         {
             { "Inject ticket.db",             &InjectFile,           N_NANDWRITE | N_EMUNAND1 | F_TICKET },
             { "Inject title.db",              &InjectFile,           N_NANDWRITE | N_EMUNAND1 | F_TITLE },
@@ -348,7 +348,7 @@ MenuInfo menu[] =
         }
     },
     {
-        "File Inject... (EmuNAND2)", 10, // ID 17
+        "File Inject... (EmuNAND2)", 11, // ID 17
         {
             { "Inject ticket.db",             &InjectFile,           N_NANDWRITE | N_EMUNAND2 | F_TICKET },
             { "Inject title.db",              &InjectFile,           N_NANDWRITE | N_EMUNAND2 | F_TITLE },
@@ -364,7 +364,7 @@ MenuInfo menu[] =
         }
     },
     {
-        "File Inject... (EmuNAND3)", 10, // ID 18
+        "File Inject... (EmuNAND3)", 11, // ID 18
         {
             { "Inject ticket.db",             &InjectFile,           N_NANDWRITE | N_EMUNAND3 | F_TICKET },
             { "Inject title.db",              &InjectFile,           N_NANDWRITE | N_EMUNAND3 | F_TITLE },
@@ -380,7 +380,7 @@ MenuInfo menu[] =
         }
     },
     {
-        "File Inject... (EmuNAND4)", 10, // ID 19
+        "File Inject... (EmuNAND4)", 11, // ID 19
         {
             { "Inject ticket.db",             &InjectFile,           N_NANDWRITE | N_EMUNAND4 | F_TICKET },
             { "Inject title.db",              &InjectFile,           N_NANDWRITE | N_EMUNAND4 | F_TITLE },
