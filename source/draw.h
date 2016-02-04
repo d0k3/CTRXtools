@@ -36,7 +36,7 @@
 
 #ifdef EXEC_GATEWAY
 	#define TOP_SCREEN0 (u8*)(*(u32*)((uint32_t)0x080FFFC0 + 4 * (*(u32*)0x080FFFD8 & 1)))
-	#define BOT_SCREEN0 (u8*)(*(u32*)0x080FFFD0)
+	#define BOT_SCREEN0 (u8*)(*(u32*)((uint32_t)0x080FFFD0 + 4 * (*(u32*)0x080FFFDC & 1)))
 	#define TOP_SCREEN1 TOP_SCREEN0
 	#define BOT_SCREEN1 BOT_SCREEN0
 #elif defined(EXEC_BOOTSTRAP)
