@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-#define MENU_MAX_ENTRIES    13
+#define MENU_MAX_ENTRIES    12
 #define MENU_MAX_DEPTH      4
 #define MENU_EXIT_REBOOT    0
 #define MENU_EXIT_POWEROFF  1

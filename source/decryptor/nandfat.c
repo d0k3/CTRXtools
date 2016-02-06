@@ -249,7 +249,7 @@ u32 DumpFile(u32 param)
     
     if (DebugSeekFileInNand(&offset, &size, f_info->name_l, f_info->path, p_info) != 0)
         return 1;
-    if (OutputFileNameSelector(filename, f_info->name_l, NULL, param) != 0)
+    if (OutputFileNameSelector(filename, f_info->name_l, NULL, (param & N_EMUNAND)) != 0)
         return 1;
     if (DecryptNandToFile(filename, offset, size, p_info) != 0)
         return 1;
@@ -291,7 +291,7 @@ u32 DumpHealthAndSafety(u32 param)
     
     if (DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health, 4) != 0)
         return 1;
-    if (OutputFileNameSelector(filename, "hs.app", NULL, param) != 0)
+    if (OutputFileNameSelector(filename, "hs.app", NULL, (param & N_EMUNAND)) != 0)
         return 1;
         
     Debug("Dumping & decrypting APP0...");

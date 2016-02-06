@@ -22,17 +22,17 @@ static u32 emunand_header = 0;
 static u32 emunand_offset = 0;
 
 
-u32 CheckEmuNand(int emunand_number)
+u32 CheckEmuNand(void)
 {
     u8* buffer = BUFFER_ADDRESS;
     u32 nand_size_sectors = getMMCDevice(0)->total_size;
     
     u32 nand_offset;
-    if (emunand_number > 0) {
+    if (emunand_no > 0) {
         if (nand_size_sectors > EMUNAND_MULTI_OFFSET_O3DS) {
-            nand_offset = EMUNAND_MULTI_OFFSET_N3DS * (emunand_number - 1 );
+            nand_offset = EMUNAND_MULTI_OFFSET_N3DS * (emunand_no - 1 );
         } else {
-            nand_offset = EMUNAND_MULTI_OFFSET_O3DS * (emunand_number - 1 );
+            nand_offset = EMUNAND_MULTI_OFFSET_O3DS * (emunand_no - 1 );
         }
     } else {
         nand_offset = 0;
@@ -57,10 +57,10 @@ u32 CheckEmuNand(int emunand_number)
     return EMUNAND_READY;
 }
 
-u32 SetNand(int emunand_number, bool force_emunand)
+u32 SetNand(bool set_emunand, bool force_emunand)
 {
-    if (emunand_number > 0) {
-        u32 emunand_state = CheckEmuNand(emunand_number);
+    if (set_emunand) {
+        u32 emunand_state = CheckEmuNand();
         if ((emunand_state == EMUNAND_READY) && force_emunand)
             emunand_state = EMUNAND_GATEWAY;
         switch (emunand_state) {
@@ -70,18 +70,18 @@ u32 SetNand(int emunand_number, bool force_emunand)
             case EMUNAND_GATEWAY:
                 emunand_header = getMMCDevice(0)->total_size;
                 if (emunand_header > EMUNAND_MULTI_OFFSET_O3DS) {
-                    emunand_offset = EMUNAND_MULTI_OFFSET_N3DS * (emunand_number - 1 );
+                    emunand_offset = EMUNAND_MULTI_OFFSET_N3DS * (emunand_no - 1 );
                 } else {
-                    emunand_offset = EMUNAND_MULTI_OFFSET_O3DS * (emunand_number - 1 );
+                    emunand_offset = EMUNAND_MULTI_OFFSET_O3DS * (emunand_no - 1 );
                 }
                 Debug("Using EmuNAND @ %06X/%06X", emunand_header, emunand_offset);
                 return 0;
             case EMUNAND_REDNAND:
                 emunand_header = 1;
                 if (getMMCDevice(0)->total_size > EMUNAND_MULTI_OFFSET_O3DS) {
-                    emunand_offset = EMUNAND_MULTI_OFFSET_N3DS * (emunand_number - 1 ) + 1;
+                    emunand_offset = EMUNAND_MULTI_OFFSET_N3DS * (emunand_no - 1 ) + 1;
                 } else {
-                    emunand_offset = EMUNAND_MULTI_OFFSET_O3DS * (emunand_number - 1 ) + 1;
+                    emunand_offset = EMUNAND_MULTI_OFFSET_O3DS * (emunand_no - 1 ) + 1;
                 }
                 Debug("Using RedNAND @ %06X/%06X", emunand_header, emunand_offset);
                 return 0;
@@ -124,7 +124,7 @@ static inline int WriteNandSectors(u32 sector_no, u32 numsectors, u8 *in)
     } else return sdmmc_nand_writesectors(sector_no, numsectors, in);
 }
 
-u32 OutputFileNameSelector(char* filename, const char* basename, char* extension, u32 param) {
+u32 OutputFileNameSelector(char* filename, const char* basename, char* extension, bool emuname) {
     char bases[3][64] = { 0 };
     char* dotpos = NULL;
     
@@ -137,19 +137,15 @@ u32 OutputFileNameSelector(char* filename, const char* basename, char* extension
         if (!extension)
             extension = dotpos + 1;
     }
-    char* emunand_name = NULL;
-    if (param & N_EMUNAND1) {
-        emunand_name = "emu1";
-    } else if (param & N_EMUNAND2) {
-        emunand_name = "emu2";
-    } else if (param & N_EMUNAND3) {
-        emunand_name = "emu3";
-    } else if (param & N_EMUNAND4) {
-        emunand_name = "emu4";
+    char nand_name[64];
+    if (emuname) {
+        snprintf(nand_name, 63,"emu%u", emunand_no);
+    } else {
+        snprintf(nand_name, 63,"sys");
     }
     // build other two base names
-    snprintf(bases[1], 63, "%s_%s", bases[0], (emunand_name != NULL) ? emunand_name : "sys");
-    snprintf(bases[2], 63, "%s%s" , (emunand_name != NULL) ? emunand_name : "sys", bases[0]);
+    snprintf(bases[1], 63, "%s_%s", bases[0], nand_name);
+    snprintf(bases[2], 63, "%s%s" , nand_name, bases[0]);
     
     u32 fn_id = 0;
     u32 fn_num = 0;
@@ -474,19 +470,16 @@ u32 DumpNand(u32 param)
     u32 nand_size = getMMCDevice(0)->total_size * NAND_SECTOR_SIZE;
     u32 result = 0;
 
-    char* emunand_name = NULL;
-    if (param & N_EMUNAND1) {
-        emunand_name = "emu1";
-    } else if (param & N_EMUNAND2) {
-        emunand_name = "emu2";
-    } else if (param & N_EMUNAND3) {
-        emunand_name = "emu3";
-    } else if (param & N_EMUNAND4) {
-        emunand_name = "emu4";
+    char nand_name[64];
+    if (param & N_EMUNAND) {
+        snprintf(nand_name, 63,"EmuNAND%u", emunand_no);
+    } else {
+        snprintf(nand_name, 63,"SysNAND");
     }
-    Debug("Dumping %sNAND. Size (MB): %u", (emunand_name != NULL) ? emunand_name : "Sys", nand_size / (1024 * 1024));
+
+    Debug("Dumping %s. Size (MB): %u", nand_name, nand_size / (1024 * 1024));
     
-    if (OutputFileNameSelector(filename, "NAND.bin", NULL, param) != 0)
+    if (OutputFileNameSelector(filename, "NAND.bin", NULL, param & N_EMUNAND) != 0)
         return 1;
     if (!DebugFileCreate(filename, true))
         return 1;
@@ -532,7 +525,7 @@ u32 DecryptNandPartition(u32 param)
         Debug("Decryption error, please contact us");
         return 1;
     }
-    if (OutputFileNameSelector(filename, p_info->name, "bin", param) != 0)
+    if (OutputFileNameSelector(filename, p_info->name, "bin", param & N_EMUNAND) != 0)
         return 1;
     
     return DecryptNandToFile(filename, p_info->offset, p_info->size, p_info);
@@ -614,18 +607,13 @@ u32 RestoreNand(u32 param)
         return 1;
     }
 
-    char* emunand_name = NULL;
-    if (param & N_EMUNAND1) {
-        emunand_name = "emu1";
-    } else if (param & N_EMUNAND2) {
-        emunand_name = "emu2";
-    } else if (param & N_EMUNAND3) {
-        emunand_name = "emu3";
-    } else if (param & N_EMUNAND4) {
-        emunand_name = "emu4";
+    char nand_name[64];
+    if (param & N_EMUNAND) {
+        snprintf(nand_name, 63,"EmuNAND%u", emunand_no);
+    } else {
+        snprintf(nand_name, 63,"SysNAND");
     }
-    
-    Debug("Restoring %sNAND. Size (MB): %u", (emunand_name != NULL) ? emunand_name : "Sys", nand_size / (1024 * 1024));
+    Debug("Restoring %s. Size (MB): %u", nand_name, nand_size / (1024 * 1024));
 
     u32 n_sectors = nand_size / NAND_SECTOR_SIZE;
     for (u32 i = 0; i < n_sectors; i += SECTORS_PER_READ) {
@@ -693,4 +681,44 @@ u32 InjectNandPartition(u32 param)
     }
     
     return EncryptFileToNand(filename, p_info->offset, p_info->size, p_info);
+}
+
+u32 EmuNandSelector() {
+    u32 emunand_count;
+    u32 emunand_state;
+
+    u8* buffer = BUFFER_ADDRESS;
+    u32 nand_size_sectors = getMMCDevice(0)->total_size;
+    
+    u32 nand_size;
+    if (nand_size_sectors > EMUNAND_MULTI_OFFSET_O3DS) {
+        nand_size = EMUNAND_MULTI_OFFSET_N3DS;
+    } else {
+        nand_size = EMUNAND_MULTI_OFFSET_O3DS;
+    }
+
+    // check the MBR for presence of EmuNAND
+    sdmmc_sdcard_readsectors(0, 1, buffer);
+    emunand_count = getle32(buffer + 0x1BE + 0x8) / nand_size;
+    if (emunand_count < 2) return 0;
+
+    DebugClear();
+    Debug("Use arrow keys and <A> to choose EmuNAND");
+    while (true) {
+        emunand_state = CheckEmuNand();
+        Debug("\rEmuNAND NO. %u : %s", emunand_no, (emunand_state == EMUNAND_READY) ? "EmuNAND ready" : (emunand_state == EMUNAND_GATEWAY) ? "GW EmuNAND" : (emunand_state == EMUNAND_REDNAND) ? "RedNAND" : "no EmuNAND");
+        // user input routine
+        u32 pad_state = InputWait();
+        if (pad_state & BUTTON_DOWN) {
+            emunand_no = emunand_no > 1 ? emunand_no - 1 : emunand_count;
+        } else if (pad_state & BUTTON_UP) {
+            emunand_no = emunand_no < emunand_count ? emunand_no + 1: 1 ;
+        } else if (pad_state & BUTTON_A) {
+            Debug("EmuNAND NO. %u", emunand_no);
+            return pad_state;
+        } else if (pad_state & BUTTON_B) {
+            Debug("(cancelled by user)");
+            return pad_state;
+        }
+    }
 }

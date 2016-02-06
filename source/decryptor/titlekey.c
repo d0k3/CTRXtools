@@ -123,20 +123,14 @@ u32 DecryptTitlekeysNand(u32 param)
     
     Debug("Decrypted %u unique Title Keys", nKeys);
     
-    char* file_name = NULL;
-    if (param & N_EMUNAND1) {
-        file_name = "decTitleKeys_emu1.bin";
-    } else if (param & N_EMUNAND2) {
-        file_name = "decTitleKeys_emu2.bin";
-    } else if (param & N_EMUNAND3) {
-        file_name = "decTitleKeys_emu3.bin";
-    } else if (param & N_EMUNAND4) {
-        file_name = "decTitleKeys_emu4.bin";
+    char nand_name[64];
+    if (param & N_EMUNAND) {
+        snprintf(nand_name, 63,"decTitleKeys_emu%u.bin", emunand_no);
     } else {
-        file_name = "decTitleKeys.bin";
+        snprintf(nand_name, 63,"decTitleKeys.bin");
     }
     if(nKeys > 0) {
-        if (!DebugFileCreate(file_name, true))
+        if (!DebugFileCreate(nand_name, true))
             return 1;
         if (!DebugFileWrite(info, 0x10 + nKeys * 0x20, 0)) {
             FileClose();
