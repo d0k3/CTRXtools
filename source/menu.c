@@ -124,35 +124,30 @@ void DrawMenu(MenuInfo* currMenu, u32 index, bool fullDraw, bool subMenu)
 
 u32 ProcessEntry(MenuEntry* entry)
 {
+    bool emunand    = entry->param & N_EMUNAND; 
     bool nand_force = entry->param & N_FORCENAND;
     bool warning    = entry->param & N_NANDWRITE;
     
     u32 pad_state;
     u32 res = 0;
  
-    if (entry->param & N_EMUNAND) {
-        pad_state = EmuNandSelector();
-        if (pad_state & BUTTON_B) {
-            return pad_state;
-        }
-    }   
     // unlock sequence for dangerous features
     if (warning) {
         u32 unlockSequenceEmu[] = { BUTTON_LEFT, BUTTON_RIGHT, BUTTON_DOWN, BUTTON_UP, BUTTON_A };
         u32 unlockSequenceSys[] = { BUTTON_LEFT, BUTTON_UP, BUTTON_RIGHT, BUTTON_UP, BUTTON_A };
-        u32 unlockLvlMax = ((emunand_no > 0) ? sizeof(unlockSequenceEmu) : sizeof(unlockSequenceSys)) / sizeof(u32);
-        u32* unlockSequence = (emunand_no > 0) ? unlockSequenceEmu : unlockSequenceSys;
+        u32 unlockLvlMax = ((emunand) ? sizeof(unlockSequenceEmu) : sizeof(unlockSequenceSys)) / sizeof(u32);
+        u32* unlockSequence = (emunand) ? unlockSequenceEmu : unlockSequenceSys;
         u32 unlockLvl = 0;
         #ifdef USE_THEME
-        LoadThemeGfx((emunand_no > 0) ? GFX_DANGER_E : GFX_DANGER_S, false);
+        LoadThemeGfx((emunand) ? GFX_DANGER_E : GFX_DANGER_S, false);
         #endif
         DebugClear();
         Debug("You selected \"%s\".", entry->name);
-        Debug("This feature writes to the %s.", (emunand_no > 0) ? "EmuNAND" : "SysNAND");
+        Debug("This feature writes to the %s.", (emunand) ? "EmuNAND" : "SysNAND");
         Debug("Doing this is potentially dangerous!");
         Debug("");
         Debug("If you wish to proceed, enter:");
-        Debug((emunand_no > 0) ? "<Left>, <Right>, <Down>, <Up>, <A>" : "<Left>, <Up>, <Right>, <Up>, <A>");
+        Debug((emunand) ? "<Left>, <Right>, <Down>, <Up>, <A>" : "<Left>, <Up>, <Right>, <Up>, <A>");
         Debug("");
         Debug("(B to return, START to reboot)");
         while (true) {
@@ -173,13 +168,20 @@ u32 ProcessEntry(MenuEntry* entry)
         if (unlockLvl < unlockLvlMax)
             return pad_state;
     }
+
+    if (emunand) {
+        pad_state = EmuNandSelector();
+        if (pad_state & (BUTTON_B | BUTTON_START)){
+            return pad_state;
+        }
+    }
     
     // execute this entries function
     #ifdef USE_THEME
     LoadThemeGfx(GFX_PROGRESS, false);
     #endif
     DebugClear();
-    res = (SetNand(emunand_no > 0, nand_force) == 0) ? (*(entry->function))(entry->param) : 1;
+    res = (SetNand(emunand, nand_force) == 0) ? (*(entry->function))(entry->param) : 1;
     Debug("%s: %s!", entry->name, (res == 0) ? "succeeded" : "failed");
     Debug("");
     Debug("Press B to return, START to reboot.");

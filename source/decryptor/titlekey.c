@@ -125,7 +125,8 @@ u32 DecryptTitlekeysNand(u32 param)
     
     char nand_name[64];
     if (param & N_EMUNAND) {
-        snprintf(nand_name, 63,"decTitleKeys_emu%u.bin", emunand_no);
+        u32 emunand_no = GetEmuNandNO();
+        snprintf(nand_name, 63,"decTitleKeys_emu%lu.bin", emunand_no);
     } else {
         snprintf(nand_name, 63,"decTitleKeys.bin");
     }

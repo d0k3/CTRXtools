@@ -61,5 +61,4 @@ u32 DecryptNandPartition(u32 param);
 u32 InjectNandPartition(u32 param);
 
 u32 EmuNandSelector();
-
-static u32 emunand_no = 1;
+u32 GetEmuNandNO();

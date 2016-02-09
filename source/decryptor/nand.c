@@ -21,6 +21,7 @@ static PartitionInfo partitions[] = {
 static u32 emunand_header = 0;
 static u32 emunand_offset = 0;
 
+static u32 emunand_no = 1;
 
 u32 CheckEmuNand(void)
 {
@@ -139,7 +140,7 @@ u32 OutputFileNameSelector(char* filename, const char* basename, char* extension
     }
     char nand_name[64];
     if (emuname) {
-        snprintf(nand_name, 63,"emu%u", emunand_no);
+        snprintf(nand_name, 63,"emu%lu", emunand_no);
     } else {
         snprintf(nand_name, 63,"sys");
     }
@@ -472,7 +473,7 @@ u32 DumpNand(u32 param)
 
     char nand_name[64];
     if (param & N_EMUNAND) {
-        snprintf(nand_name, 63,"EmuNAND%u", emunand_no);
+        snprintf(nand_name, 63,"EmuNAND%lu", emunand_no);
     } else {
         snprintf(nand_name, 63,"SysNAND");
     }
@@ -609,7 +610,7 @@ u32 RestoreNand(u32 param)
 
     char nand_name[64];
     if (param & N_EMUNAND) {
-        snprintf(nand_name, 63,"EmuNAND%u", emunand_no);
+        snprintf(nand_name, 63,"EmuNAND%lu", emunand_no);
     } else {
         snprintf(nand_name, 63,"SysNAND");
     }
@@ -700,10 +701,11 @@ u32 EmuNandSelector() {
     // check the MBR for presence of EmuNAND
     sdmmc_sdcard_readsectors(0, 1, buffer);
     emunand_count = getle32(buffer + 0x1BE + 0x8) / nand_size;
-    if (emunand_count < 2) return 0;
+    if (emunand_count < 2) return BUTTON_A;
 
     DebugClear();
     Debug("Use arrow keys and <A> to choose EmuNAND");
+    Debug("(B to return, START to reboot)");
     while (true) {
         emunand_state = CheckEmuNand();
         Debug("\rEmuNAND NO. %u : %s", emunand_no, (emunand_state == EMUNAND_READY) ? "EmuNAND ready" : (emunand_state == EMUNAND_GATEWAY) ? "GW EmuNAND" : (emunand_state == EMUNAND_REDNAND) ? "RedNAND" : "no EmuNAND");
@@ -721,4 +723,8 @@ u32 EmuNandSelector() {
             return pad_state;
         }
     }
+}
+
+u32 GetEmuNandNO(){
+    return emunand_no;
 }
