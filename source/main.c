@@ -1,5 +1,6 @@
 #include "common.h"
 #include "draw.h"
+#include "fb.h"
 #include "fs.h"
 #include "menu.h"
 #include "i2c.h"
@@ -219,6 +220,14 @@ MenuInfo menu[] =
     }
 };
 
+void fbSetup()
+{
+    *(unsigned int*)0x1FFFFFF8 = a11Entry;
+
+    *(uint32_t*)0x23FFFE00 = FB_TOP_RIGHT;
+    *(uint32_t*)0x23FFFE04 = FB_TOP_LEFT;
+    *(uint32_t*)0x23FFFE08 = FB_BOTTOM;
+}
 
 void Reboot()
 {
@@ -236,6 +245,7 @@ void PowerOff()
 
 int main()
 {
+    fbSetup();
     ClearScreenFull(true, true);
     InitFS();
 

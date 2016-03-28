@@ -1,0 +1,5 @@
+#define FB_TOP_LEFT 0x18300000
+#define FB_TOP_RIGHT 0x18300000
+#define FB_BOTTOM 0x18346500
+
+void a11Entry();
