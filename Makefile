@@ -45,6 +45,10 @@ ifneq ($(strip $(THEME)),)
 CFLAGS	+=	-DUSE_THEME=\"\/$(THEME)\"
 endif
 
+ifeq ($(FONT),LINUX)
+CFLAGS	+=	-DUSE_LINUX_FONT
+endif
+
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
 
 ASFLAGS	:=	-g $(ARCH) -DEXEC_$(EXEC_METHOD)
