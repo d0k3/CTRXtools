@@ -153,7 +153,7 @@ u32 DebugSeekFileInNand(u32* offset, u32* size, const char* filename, const char
     return 0;
 }
 
-u32 SeekTitleInNandDb(u32* tid_low, u32* tmd_id, TitleListInfo* title_info)
+u32 SeekTitleInNandDb(u32* tid_low, u32* tmd_id, TitleListInfo* title_info, u32* index)
 {
     PartitionInfo* ctrnand_info = GetPartitionInfo(P_CTRNAND);
     u8* titledb = (u8*) 0x20316000;
@@ -172,7 +172,7 @@ u32 SeekTitleInNandDb(u32* tid_low, u32* tmd_id, TitleListInfo* title_info)
     if ((getle32(entry_table + 0) != 2) || (getle32(entry_table + 4) != 3))
         return 1; // magic number not found
     *tid_low = 0;
-    for (u32 i = 0; i < 1000; i++) {
+    for (u32 i = index == NULL ? 0 : *index; i < 1000; i++) {
         u8* entry = entry_table + 0xA8 + (0x2C * i);
         u8* info = info_data + (0x80 * i);
         u32 r;
@@ -185,45 +185,19 @@ u32 SeekTitleInNandDb(u32* tid_low, u32* tmd_id, TitleListInfo* title_info)
         if (r >= 6) continue;
         *tmd_id = getle32(info + 0x14);
         *tid_low = title_info->tid_low[r];
+        if (index != NULL) *index = i;
         break; 
     }
     
     return (*tid_low) ? 0 : 1;
 }
 
-u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* size_app, TitleListInfo* title_info, u32 max_cnt)
+static u32 _SeekTitleInFile(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* size_app, TitleListInfo* title_info, u32 max_cnt, u32 min_size, u32 tid_low)
 {
     PartitionInfo* ctrnand_info = GetPartitionInfo(P_CTRNAND);
     u8* buffer = (u8*) 0x20316000;
     u32 cnt_count = 0;
-    u32 tid_low = 0;
-    u32 tmd_id = 0;
-    
-    Debug("Searching title \"%s\"...", title_info->name);
-    Debug("Method 1: Search in title.db...");
-    if (SeekTitleInNandDb(&tid_low, &tmd_id, title_info) == 0) {
-        char path[64];
-        sprintf(path, "TITLE      %08X   %08X   CONTENT    %08XTMD", (unsigned int) title_info->tid_high, (unsigned int) tid_low, (unsigned int) tmd_id);
-        if (SeekFileInNand(offset_tmd, size_tmd, path, ctrnand_info) != 0)
-            tid_low = 0;
-    }
-    if (!tid_low) {
-        Debug("Method 2: Search in file system...");
-        for (u32 i = 0; i < 6; i++) {
-            char path[64];
-            if (title_info->tid_low[i] == 0)
-                continue;
-            sprintf(path, "TITLE      %08X   %08X   CONTENT    ????????TMD", (unsigned int) title_info->tid_high, (unsigned int) title_info->tid_low[i]);
-            if (SeekFileInNand(offset_tmd, size_tmd, path, ctrnand_info) == 0) {
-                tid_low = title_info->tid_low[i];
-                break;
-            }
-        }
-    }
-    if (!tid_low) {
-        Debug("Failed!");
-        return 1;
-    }
+
     Debug("Found title %08X%08X", title_info->tid_high, tid_low);
     
     Debug("TMD0 found at %08X, size %ub", *offset_tmd, *size_tmd);
@@ -260,8 +234,52 @@ u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* s
         }
         Debug("APP%i found at %08X, size %ukB", i, offset_app[i], size_app[i] / 1024);
     }
+    if (min_size > size_app[0]) {
+        Debug("APP was skipped due to size too small!");
+        return 1;
+    }
     
     return 0;
+}
+
+u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* size_app, TitleListInfo* title_info, u32 max_cnt, u32 min_size)
+{
+    PartitionInfo* ctrnand_info = GetPartitionInfo(P_CTRNAND);
+    u32 tid_low = 0;
+    u32 tmd_id = 0;
+    u32 index = 0;
+    
+    Debug("Searching title \"%s\"...", title_info->name);
+    Debug("Method 1: Search in title.db...");
+    while (SeekTitleInNandDb(&tid_low, &tmd_id, title_info, &index) == 0) {
+        char path[64];
+        u32 res;
+        sprintf(path, "TITLE      %08X   %08X   CONTENT    %08XTMD", (unsigned int) title_info->tid_high, (unsigned int) tid_low, (unsigned int) tmd_id);
+        if (SeekFileInNand(offset_tmd, size_tmd, path, ctrnand_info) == 0 && tid_low != 0) {
+            res = _SeekTitleInFile(offset_tmd, size_tmd, offset_app, size_app, title_info, max_cnt, min_size, tid_low);
+            if (res == 0) return 0;
+        }
+        tid_low = 0;
+        ++index;
+    }
+    if (!tid_low) {
+        Debug("Method 2: Search in file system...");
+        for (u32 i = 0; i < 6; i++) {
+            char path[64];
+            if (title_info->tid_low[i] == 0)
+                continue;
+            sprintf(path, "TITLE      %08X   %08X   CONTENT    ????????TMD", (unsigned int) title_info->tid_high, (unsigned int) title_info->tid_low[i]);
+            if (SeekFileInNand(offset_tmd, size_tmd, path, ctrnand_info) == 0) {
+                tid_low = title_info->tid_low[i];
+                break;
+            }
+        }
+    }
+    if (!tid_low) {
+        Debug("Failed!");
+        return 1;
+    }
+    return _SeekTitleInFile(offset_tmd, size_tmd, offset_app, size_app, title_info, max_cnt, min_size, tid_low);
 }
 
 u32 DumpFile(u32 param)
@@ -316,8 +334,8 @@ u32 DumpHealthAndSafety(u32 param)
     u32 size_tmd;
     
     
-    if ((DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health, 4) != 0) && (!health_alt || 
-        (DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health_alt, 4) != 0)))
+    if ((DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health, 4, 64 * 1024) != 0) && (!health_alt || 
+        (DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health_alt, 4, 64 * 1024) != 0)))
         return 1;
     if (OutputFileNameSelector(filename, "hs.app", NULL) != 0)
         return 1;
@@ -349,8 +367,8 @@ u32 InjectHealthAndSafety(u32 param)
     if (!(param & N_NANDWRITE)) // developer screwup protection
         return 1;
     
-    if ((DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health, 4) != 0) && (!health_alt || 
-        (DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health_alt, 4) != 0)))
+    if ((DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health, 4, 64 * 1024) != 0) && (!health_alt || 
+        (DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, health_alt, 4, 64 * 1024) != 0)))
         return 1;
     if (size_app[0] > 0x400000) {
         Debug("H&S system app is too big!");
@@ -432,7 +450,7 @@ u32 DumpNcchFirms(u32 param)
         Debug("");
         
         // search for firm title in NAND
-        if (DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, firm, 4) != 0)
+        if (DebugSeekTitleInNand(&offset_tmd, &size_tmd, offset_app, size_app, firm, 4, 0) != 0)
             continue;
         
         // get version from TMD
