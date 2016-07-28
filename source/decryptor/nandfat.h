@@ -33,8 +33,8 @@ typedef struct {
 
 u32 SeekFileInNand(u32* offset, u32* size, const char* path, PartitionInfo* partition);
 u32 DebugSeekFileInNand(u32* offset, u32* size, const char* filename, const char* path, PartitionInfo* partition);
-u32 SeekTitleInNandDb(u32* tid_low, u32* tmd_id, TitleListInfo* title_info);
-u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* size_app, TitleListInfo* title_info, u32 max_cnt);
+u32 SeekTitleInNandDb(u32* tid_low, u32* tmd_id, TitleListInfo* title_info, u32* index);
+u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* size_app, TitleListInfo* title_info, u32 max_cnt, u32 min_size);
 
 // --> FEATURE FUNCTIONS <--
 u32 DumpFile(u32 param);
