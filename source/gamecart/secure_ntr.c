@@ -21,7 +21,6 @@
 #include "protocol_ntr.h"
 #include "secure_ntr.h"
 #include "card_ntr.h"
-#include "key1.h"
 #include "draw.h"
 #include "delay.h"
 
@@ -115,8 +114,10 @@ void NTR_ApplyKey (u32* pCardHash, int nCardHash, u32* pKeyCode)
 
 void NTR_InitKey (u32 aGameCode, u32* pCardHash, int nCardHash, u32* pKeyCode, bool aType)
 {
-	//const unsigned char gEncrData[4168] <- wooddumper key1.h
-    memcpy (pCardHash, gEncrData, sizeof(gEncrData));
+    //const u8* BlowfishTwl = (const u8*)0x01FFD3E0;
+    const u8* BlowfishNtr = (const u8*)0x01FFE428;
+
+    memcpy (pCardHash, BlowfishNtr, 0x1048);
     pKeyCode[0] = aGameCode;
     pKeyCode[1] = aGameCode/2;
     pKeyCode[2] = aGameCode*2;
@@ -152,7 +153,9 @@ void NTR_CreateEncryptedCommand (u8 aCommand, u32* pCardHash, u8* aCmdData, IKEY
     aCmdData[2]=(u8)((jjj<<4)|(pKey1->kkkkk>>16));
     aCmdData[1]=(u8)(pKey1->kkkkk>>8);
     aCmdData[0]=(u8)pKey1->kkkkk;
-   NTR_CryptUp(pCardHash, (u32*)aCmdData);
+
+    NTR_CryptUp(pCardHash, (u32*)aCmdData);
+
     pKey1->kkkkk+=1;
 }
 
@@ -194,8 +197,7 @@ void NTR_CmdSecure (u32 flags, void* buffer, u32 length, u8* pcmd, u32 Delay)
 
 bool NTR_Secure_Init (u8* header, u32 CartID)
 {
-    //Debug("NTR_Initialize");
-    u32 iGameCode;
+	u32 iGameCode;
     u32 iCardHash[0x412] = {0};
     u32 iKeyCode[3] = {0};
     u32* secureArea=(u32*)(header + 0x4000);
