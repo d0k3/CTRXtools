@@ -4,6 +4,7 @@
 #include "platform.h"
 #include "gamecart/protocol.h"
 #include "gamecart/command_ctr.h"
+#include "gamecart/command_ntr.h"
 #include "decryptor/aes.h"
 #include "decryptor/sha.h"
 #include "decryptor/decryptor.h"
@@ -1427,7 +1428,30 @@ static u32 DecryptCartNcchToFile(u32 offset_cart, u32 offset_file, u32 size, u32
     return 0;
 }
 
+u32 DumpNtrGameCart(u32 param);
+u32 DumpCtrGameCart(u32 param);
+
 u32 DumpGameCart(u32 param)
+{
+    // check if cartridge inserted
+    if (REG_CARDCONF2 & 0x1) {
+        Debug("Cartridge was not detected");
+        return 1;
+    }
+    
+    // initialize cartridge
+    Cart_Init();
+    Debug("Cartridge ID: %08X", Cart_GetID());
+
+    if (Cart_GetID() & 0x10000000)
+    {
+        return DumpCtrGameCart (param);
+    }
+
+    return DumpNtrGameCart (param);
+}
+
+u32 DumpCtrGameCart(u32 param)
 {
     NcsdHeader* ncsd = (NcsdHeader*) 0x20316000;
     NcchHeader* ncch = (NcchHeader*) 0x20317000;
@@ -1438,18 +1462,7 @@ u32 DumpGameCart(u32 param)
     u64 data_size = 0;
     u64 dump_size = 0;
     u32 result = 0;
-    
-    
-    // check if cartridge inserted
-    if (REG_CARDCONF2 & 0x1) {
-        Debug("Cartridge was not detected");
-        return 1;
-    }
-    
-    // initialize cartridge
-    Cart_Init();
-    Debug("Cartridge ID: %08X", Cart_GetID());
-    
+
     // read cartridge NCCH header
     CTR_CmdReadHeader(ncch);
     if (memcmp(ncch->magic, "NCCH", 4) != 0) {
@@ -1629,6 +1642,84 @@ u32 DumpGameCart(u32 param)
     
     
     return result;
+}
+
+u32 DumpNtrGameCart(u32 param)
+{
+    char filename[64];
+    u64 cart_size = 0;
+    u64 data_size = 0;
+    u64 dump_size = 0;
+    u8* buff = BUFFER_ADDRESS;
+    u64 offset = 0x8000;
+    char name[16];
+
+    memset (buff, 0x00, 0x4000);
+
+
+    NTR_CmdReadHeader (buff);
+    if (buff[0] == 0x00)
+    {
+        Debug("Error reading cart header");
+        return 1;
+    }
+
+    memset (name, 0x00, sizeof (name));
+    memcpy (name, &buff[0x00], 12);
+    Debug("Product name: %s", name);
+
+    memset (name, 0x00, sizeof (name));
+    memcpy (name, &buff[0x0C], 4 + 2);
+    Debug("Product ID: %s", name);
+
+    cart_size = (128 * 1024) << buff[0x14];
+    data_size = *((u32*)&buff[0x80]);;
+    dump_size = (param & CD_TRIM) ? data_size : cart_size;
+    Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
+    Debug("Cartridge used size: %lluMB", data_size / 0x100000);
+    Debug("Cartridge dump size: %lluMB", dump_size / 0x100000);
+
+    if (!NTR_Secure_Init (buff, Cart_GetID()))
+    {
+        Debug("Error reading secure data");
+        return 1;
+    }
+
+    Debug("");
+    snprintf(filename, 64, "/%s%s%s.nds", GetGameDir() ? GetGameDir() : "", GetGameDir() ? "/" : "", name);
+
+    if (!DebugFileCreate(filename, true)) {
+        return 1;
+    }
+    if (!DebugFileWrite(buff, 0x8000, 0)) {
+        FileClose();
+        return 1;
+    }
+
+
+
+    for (offset=0x8000;offset<dump_size;offset+=0x200)
+    {
+        NTR_CmdReadData (offset, buff);
+        if (!DebugFileWrite((void*) buff, 0x200, offset)) {
+            FileClose();
+            return 1;
+        }
+        ShowProgress(offset, dump_size);
+    }
+
+    if (dump_size % 0x200)
+    {
+        NTR_CmdReadData (offset, buff);
+        if (!DebugFileWrite((void*) buff, dump_size % 0x200, offset)) {
+            FileClose();
+            return 1;
+        }
+    }
+
+    FileClose ();
+    ShowProgress(0, 0);
+    return 0;
 }
 
 u32 DumpPrivateHeader(u32 param)
