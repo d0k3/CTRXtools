@@ -108,6 +108,7 @@ void Cart_Init(void)
 
     // Reset
     NTR_CmdReset();
+
     CartID = NTR_CmdGetCartId();
 
     // 3ds

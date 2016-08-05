@@ -1,0 +1,3 @@
+const unsigned char gEncrData[] =
+{
+};
