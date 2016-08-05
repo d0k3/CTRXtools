@@ -120,8 +120,8 @@ void NTR_InitKey (u32 aGameCode, u32* pCardHash, int nCardHash, u32* pKeyCode, b
     pKeyCode[0] = aGameCode;
     pKeyCode[1] = aGameCode/2;
     pKeyCode[2] = aGameCode*2;
-	Debug ("pKeyCode=%08X %08X %08X", pKeyCode[0], pKeyCode[1], pKeyCode[2]);
-    NTR_ApplyKey (pCardHash, nCardHash, pKeyCode);
+
+	NTR_ApplyKey (pCardHash, nCardHash, pKeyCode);
     NTR_ApplyKey (pCardHash, nCardHash, pKeyCode);
 
     pKeyCode[1] = pKeyCode[1]*2;
@@ -152,14 +152,8 @@ void NTR_CreateEncryptedCommand (u8 aCommand, u32* pCardHash, u8* aCmdData, IKEY
     aCmdData[2]=(u8)((jjj<<4)|(pKey1->kkkkk>>16));
     aCmdData[1]=(u8)(pKey1->kkkkk>>8);
     aCmdData[0]=(u8)pKey1->kkkkk;
-     Debug("NoEnc: %02X%02X%02X%02X %02X%02X%02X%02X",
-          aCmdData[7], aCmdData[6], aCmdData[5], aCmdData[4],
-          aCmdData[3], aCmdData[2], aCmdData[1], aCmdData[0]);
    NTR_CryptUp(pCardHash, (u32*)aCmdData);
     pKey1->kkkkk+=1;
-    Debug("Enc:   %02X%02X%02X%02X %02X%02X%02X%02X",
-          aCmdData[7], aCmdData[6], aCmdData[5], aCmdData[4],
-          aCmdData[3], aCmdData[2], aCmdData[1], aCmdData[0]);
 }
 
 void NTR_DecryptSecureArea (u32 aGameCode, u32* pCardHash, int nCardHash, u32* pKeyCode, u32* pSecureArea)
