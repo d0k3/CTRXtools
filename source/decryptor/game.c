@@ -1679,6 +1679,13 @@ u32 DumpNtrGameCart(u32 param)
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);
     Debug("Cartridge dump size: %lluMB", dump_size / 0x100000);
 
+    //Unitcode (00h=NDS, 02h=NDS+DSi, 03h=DSi) (bit1=DSi)
+    if (buff[0x12] != 0x00)
+    {
+        Debug ("DSi(Hybrid or enhanced) is not supported");
+        return 1;
+    }
+
     if (!NTR_Secure_Init (buff, Cart_GetID()))
     {
         Debug("Error reading secure data");
