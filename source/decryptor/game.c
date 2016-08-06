@@ -1680,9 +1680,14 @@ u32 DumpNtrGameCart(u32 param)
     Debug("Cartridge dump size: %lluMB", dump_size / 0x100000);
 
     //Unitcode (00h=NDS, 02h=NDS+DSi, 03h=DSi) (bit1=DSi)
-    if (buff[0x12] != 0x00)
+    if (buff[0x12] == 0x02)
     {
-        Debug ("DSi(Hybrid or enhanced) is not supported");
+        Debug ("Hybrid(DS+DSi) cartridge was detected");
+        Debug ("This dumper supports only DS mode");
+    }
+    else if (buff[0x12] != 0x00)
+    {
+        Debug ("DSi Cartridge is not supported");
         return 1;
     }
 
