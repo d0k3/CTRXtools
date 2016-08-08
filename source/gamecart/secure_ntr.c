@@ -220,7 +220,7 @@ bool NTR_Secure_Init (u8* header, u32 CartID)
     if(!iCheapCard) flagsKey1 |= NTRCARD_SEC_LARGE;
     //Debug("iCheapCard=%d, readTimeout=%d", iCheapCard, readTimeout);
 
-	NTR_InitKey1 (cmdData, &iKey1);
+    NTR_InitKey1 (cmdData, &iKey1);
     //Debug("cmdData=%02X %02X %02X %02X %02X %02X %02X %02X ", cmdData[0], cmdData[1], cmdData[2], cmdData[3], cmdData[4], cmdData[5], cmdData[6], cmdData[7]);
     //Debug("iKey1=%08X %08X %08X", iKey1.iii, iKey1. jjj, iKey1. kkkkk);
     //Debug("iKey1=%08X %08X %08X", iKey1. llll, iKey1. mmm, iKey1. nnn);
@@ -257,6 +257,7 @@ bool NTR_Secure_Init (u8* header, u32 CartID)
     if (SecureCartID != CartID)
     {
 		Debug ("Invalid SecureCartID. (%08X != %08X)", SecureCartID, CartID);
+		Debug ("This cartridge is not supported");
         return false;
     }
 
