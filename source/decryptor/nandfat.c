@@ -5,7 +5,6 @@
 #include "decryptor/sha.h"
 #include "decryptor/hashfile.h"
 #include "decryptor/game.h"
-#include "decryptor/keys.h"
 #include "decryptor/nand.h"
 #include "decryptor/nandfat.h"
 
@@ -59,8 +58,7 @@ NandFileInfo fileList[] = { // first six entries are .dbs, placement corresponds
     { "seedsave.bin", "seedsave.bin", "DATA       ???????????SYSDATA    0001000F   00000000   ", P_CTRNAND },
     { "nagsave.bin",  "nagsave.bin",  "DATA       ???????????SYSDATA    0001002C   00000000   ", P_CTRNAND },
     { "nnidsave.bin", "nnidsave.bin", "DATA       ???????????SYSDATA    00010038   00000000   ", P_CTRNAND },
-    { "friendsave.bin", "friendsave.bin", "DATA       ???????????SYSDATA    00010032   00000000   ", P_CTRNAND },
-    { "configsave.bin", "configsave.bin", "DATA       ???????????SYSDATA    00010017   00000000   ", P_CTRNAND }
+    { "friendsave.bin", "friendsave.bin", "DATA       ???????????SYSDATA    00010032   00000000   ", P_CTRNAND }
 };
 
 
@@ -265,123 +263,6 @@ u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* s
         }
         Debug("APP%i found at %08X, size %ukB", i, offset_app[i], size_app[i] / 1024);
     }
-    
-    return 0;
-}
-
-u32 FixNandDataId0(void)
-{
-    static const char zeroes[8+3] = { 0x00 };
-    const u32 lfn_pos[13] = { 1, 3, 5, 7, 9, 14, 16, 18, 20, 22, 24, 28, 30 };
-    u8* buffer = BUFFER_ADDRESS;
-    PartitionInfo* ctrnand_info = GetPartitionInfo(P_CTRNAND);
-    char id0_key[32 + 1];
-    char id0_dir[32 + 1];
-    char id0_fat[8 + 3 + 1];
-    u32 offset;
-    u32 size;
-    
-    // grab movable.sed data / slot0x34keyY
-    u8* movable = buffer;
-    u8* slot0x34keyY = movable + 0x110;
-    unsigned int sha256sum[8];
-    if ((SeekFileInNand(&offset, &size, "PRIVATE    MOVABLE SED", ctrnand_info) != 0) || (size > 0x200) ||
-        (DecryptNandToMem(movable, offset, size, ctrnand_info) != 0)) {
-        return 1; // this should never happen
-    }
-    sha_quick(sha256sum, slot0x34keyY, 16, SHA256_MODE);
-    snprintf(id0_key, 32 + 1, "%08x%08x%08x%08x", sha256sum[0], sha256sum[1], sha256sum[2], sha256sum[3]);
-    snprintf(id0_fat, 8 + 3 + 1, "%06X~1   ", sha256sum[0] >> 8);
-    
-    // grab the FAT directory object
-    u8* dirblock = buffer;
-    u32 dirblock_size = 16 * 1024; // 16kB just to be careful
-    if ((SeekFileInNand(&offset, &size, "DATA       ", ctrnand_info) != 0) ||
-        (DecryptNandToMem(dirblock, offset, dirblock_size, ctrnand_info) != 0))
-        return 1;
-    // search for first valid directory entry
-    u32 base = 0;
-    for (base = 0x20; base < dirblock_size; base += 0x20) {
-        // skip invisible, deleted and lfn entries
-        if ((dirblock[base] == '.') || (dirblock[base] == 0xE5) || (dirblock[base+0x0B] == 0x0F))
-            continue;
-        else if (memcmp(dirblock + base, zeroes, 8+3) == 0)
-            return 1;
-        break;
-    }
-    if (base >= dirblock_size)
-        return 1;
-    // got a valid entry, make sure it is the only one
-    for (u32 pos = base; pos < dirblock_size; pos += 0x20) {
-        if ((dirblock[base] == '.') || (dirblock[base] == 0xE5) || (dirblock[base+0x0B] == 0x0F))
-            continue;
-        else if (memcmp(dirblock + base, zeroes, 8+3) == 0)
-            return 1;
-    }
-    
-    // calculate checksum
-    u8 checksum = 0;
-    for (u32 i = 0; i < 8 + 3; i++)
-        checksum = ((checksum >> 1) | (checksum << 7)) + dirblock[base+i];
-    
-    // now work backwards to put together the LFN
-    memset(id0_dir, 0x00, 32 + 1);
-    char* id0_ch = id0_dir;
-    u32 cb = 1;
-    for (u32 pos = base - 0x20; pos > 0; pos -= 0x20) {
-        // check entry data (first byte, attributes, checksum)
-        if (((dirblock[pos] & 0x3F) != cb++) || (dirblock[pos] & 0x80) ||
-            (getbe16(dirblock + pos + 0x0B) != 0x0F00) || (getbe16(dirblock + pos + 0x1A) != 0x0000) ||
-            (dirblock[pos+0x0D] != checksum))
-            return 1;
-        u32 idx = 0;
-        while (idx < 13) {
-            u32 cp = pos + lfn_pos[idx++];
-            if (dirblock[cp+1] != 0)
-                return 1;
-            else if (dirblock[cp] == 0)
-                break;
-            *(id0_ch++) = dirblock[cp];
-            if (id0_ch - id0_dir > 32)
-                return 1;
-        }
-        while (idx < 13) {
-            u32 cp = pos + lfn_pos[idx++];
-            if ((dirblock[cp] != 0xFF) || (dirblock[cp+1] != 0xFF))
-                return 1;
-        }
-        if (dirblock[pos] & 0x40)
-            break;
-    }
-    
-    if (memcmp(id0_key, id0_dir, 32 + 1) == 0) {
-        Debug("/DATA/<ID0>: matches, no rename needed");
-        return 0;
-    }
-    
-    // calculate new checksum
-    checksum = 0;
-    for (u32 i = 0; i < 8 + 3; i++)
-        checksum = ((checksum >> 1) | (checksum << 7)) + id0_fat[i];
-    
-    // rename the folder (SFN and LFN)
-    memcpy(dirblock + base, id0_fat, 8 + 3);
-    id0_ch = id0_key; cb = 1; 
-    for (u32 pos = base - 0x20; pos > 0; pos -= 0x20) {
-        u32 idx = 0;
-        dirblock[pos+0x0D] = checksum;
-        while (idx < 13) {
-            u32 cp = pos + lfn_pos[idx++];
-            dirblock[cp] = *(id0_ch++);
-            if (id0_ch - id0_key == 32)
-                break;
-        }
-    }
-    
-    // inject the directory block back
-    if (EncryptMemToNand(dirblock, offset, dirblock_size, ctrnand_info) != 0)
-        return 1;
-    Debug("/DATA/<ID0>: renamed to match");
     
     return 0;
 }
@@ -679,13 +560,11 @@ u32 DumpNcchFirms(u32 param)
     return success ? 0 : 1;
 }
 
-u32 AutoFixCtrnand(u32 param)
+u32 AutoFixCmacs(u32 param)
 {
     (void) (param); // param is unused here
     NandFileInfo* f_info;
     PartitionInfo* p_info;
-    u8 header[0x200];
-    u8 temp[0x200];
     u32 offset;
     u32 size;
     u32 res = 0;
@@ -693,12 +572,10 @@ u32 AutoFixCtrnand(u32 param)
     if (!(param & N_NANDWRITE)) // developer screwup protection
         return 1;
     
-    Debug("Checking and fixing <id0> folder");
-    if (FixNandDataId0() != 0)
-        return 1;
-    
     Debug("Checking and fixing .db CMACs...");
     for (u32 id = 0; id < 6; id++) { // fix CMACs for .db files
+        u8 header[0x200];
+        u8 temp[0x200];
         f_info = fileList + id;
         p_info = GetPartitionInfo(f_info->partition_id);
         if ((DebugSeekFileInNand(&offset, &size, f_info->name_l, f_info->path, p_info) != 0) || (size < 0x200)) {
@@ -713,22 +590,6 @@ u32 AutoFixCtrnand(u32 param)
         if ((FixCmac(header, temp, 0x10C, 0x0B) != 0) && (EncryptMemToNand(header, offset, 0x200, p_info) != 0))
             return 1;
     }
-    
-    SetupMovableKeyY(true, 0x30, NULL);
-    Debug("Checking and fixing config save...");
-    f_info = GetNandFileInfo(F_CONFIGSAVE);
-    p_info = GetPartitionInfo(f_info->partition_id);
-    if ((DebugSeekFileInNand(&offset, &size, f_info->name_l, f_info->path, p_info) != 0) || (size < 0x200)) {
-        return 0;
-    }
-    if (DecryptNandToMem(header, offset, 0x200, p_info) != 0)
-        return 1;
-    u64 save_id = 0x00010017; 
-    memcpy(temp + 0x00, "CTR-SYS0", 8);
-    memcpy(temp + 0x08, &save_id, 8);
-    memcpy(temp + 0x10, header + 0x100, 0x100);
-    if ((FixCmac(header, temp, 0x110, 0x30) != 0) && (EncryptMemToNand(header, offset, 0x200, p_info) != 0))
-        return 1;
     
     Debug("Checking and fixing movable.sed CMAC...");
     f_info = GetNandFileInfo(F_MOVABLE);

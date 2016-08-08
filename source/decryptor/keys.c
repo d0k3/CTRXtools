@@ -72,11 +72,11 @@ u32 SetupCommonKeyY0x3D(u32 commonKeyIndex)
     return 0;
 }
 
-u32 SetupMovableKeyY(bool from_nand, u32 keyslot, u8* movable_key) // setup the SD keyY 0x34
+u32 SetupSdKeyY0x34(bool from_nand, u8* movable_key) // setup the SD keyY 0x34
 {
     u8 movable_sed[0x200];
     
-    if (from_nand) { // load console keyY from movable.sed from NAND
+    if (from_nand) { // load console 0x34 keyY from movable.sed from NAND
         PartitionInfo* p_info = GetPartitionInfo(P_CTRNAND);
         u32 offset;
         u32 size;
@@ -96,9 +96,9 @@ u32 SetupMovableKeyY(bool from_nand, u32 keyslot, u8* movable_key) // setup the 
         Debug("movable.sed is corrupt!");
         return 1;
     }
-    setup_aeskeyY(keyslot, movable_sed + 0x110);
-    use_aeskey(keyslot);
-    Debug("0x%02X KeyY: set up from %s", keyslot, (from_nand) ? "NAND" : "movable.sed");
+    setup_aeskeyY(0x34, movable_sed + 0x110);
+    use_aeskey(0x34);
+    Debug("0x34 KeyY: set up from %s", (from_nand) ? "NAND" : "movable.sed");
     
     if (movable_key)
         memcpy(movable_key, movable_sed + 0x110, 16);
