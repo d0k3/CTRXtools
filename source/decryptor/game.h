@@ -85,15 +85,6 @@ typedef struct {
     u8  hash_romfs[0x20];
 } __attribute__((packed, aligned(16))) NcchHeader;
 
-// see: https://www.3dbrew.org/wiki/CIA#Meta
-typedef struct {
-	u8  dependencies[0x180]; // from ExtHeader
-    u8  reserved0[0x180];
-    u32 core_version; // 2 normally
-    u8  reserved1[0xFC];
-    u8  smdh[0x36C0]; // from ExeFS
-} __attribute__((packed)) CiaMeta;
-
 // from: https://github.com/profi200/Project_CTR/blob/02159e17ee225de3f7c46ca195ff0f9ba3b3d3e4/ctrtool/tik.h#L15-L39
 typedef struct {
     u8 sig_type[4];

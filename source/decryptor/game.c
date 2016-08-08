@@ -4,6 +4,7 @@
 #include "platform.h"
 #include "gamecart/protocol.h"
 #include "gamecart/command_ctr.h"
+#include "gamecart/command_ntr.h"
 #include "decryptor/aes.h"
 #include "decryptor/sha.h"
 #include "decryptor/decryptor.h"
@@ -860,7 +861,6 @@ u32 BuildCiaStub(u8* stub, u8* ncchncsd)
     header->size_ticket = sizeof(Ticket);
     header->size_tmd = sizeof(TitleMetaData) + (content_count * sizeof(TmdContentChunk));
     header->size_content = content_size[0] + content_size[1] + content_size[2];
-    header->size_meta = sizeof(CiaMeta);
     header->content_index[0] = cia_cnt_index;
     GetCiaInfo(&cia, header);
     
@@ -943,7 +943,6 @@ u32 FixCiaFile(const char* filename)
     u8* buffer = (u8*) 0x20316000;
     NcchHeader* ncch = (NcchHeader*) (0x20316000 + 0x4000);
     u8* exthdr = (u8*) (0x20316000 + 0x4200); // we only need the first 0x400 byte
-    CiaMeta* meta = (CiaMeta*) 0x20400000;
     CiaInfo cia;
     
     
@@ -967,90 +966,40 @@ u32 FixCiaFile(const char* filename)
         u32 offset = next_offset;
         next_offset = offset + size;
         
-        // Fix NCCH ExHeader, build metadata (only for first content CXI)
+        // Fix NCCH ExHeader first (only for first content CXI)
         if ((i == 0) && (getbe16(content_list[i].index) == 0)) {
             if ((FileGetData(filename, ncch, 0x600, offset) != 0x600) || (memcmp(ncch->magic, "NCCH", 4) != 0)) {
                 Debug("Failed reading NCCH content");
                 return 1;
             }
-            
-            // init metadata with all zeroes
-            memset(meta, 0x00, sizeof(CiaMeta));
-            meta->core_version = 2;
-            
-            // prepare crypto stuff (even if it may not get used)
-            CryptBufferInfo info = {.setKeyY = 1, .keyslot = 0x2C, .buffer = exthdr, .size = 0x400, .mode = AES_CNT_CTRNAND_MODE};
-            memcpy(info.keyY, ncch->signature, 16);
-            if (ncch->flags[7] & 0x01) { // set up zerokey crypto instead
-                __attribute__((aligned(16))) u8 zeroKey[16] =
-                    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-                info.setKeyY = 0;
-                info.keyslot = 0x11;
-                setup_aeskey(0x11, zeroKey);
-                use_aeskey(0x11);
-            }
-            
-            // process extheader
             if (ncch->size_exthdr > 0) {
-                if (!(ncch->flags[7] & 0x04)) { // encrypted NCCH
+                if (ncch->flags[7] & 0x01) { // zerokey crypto -> ignore this
+                    Debug("Zerokey crypto is not supported here");
+                    return 1;
+                } else if (ncch->flags[7] & 0x04) { // not encrypted -> fine
+                    exthdr[0xD] |= (1<<1); // set SD flag
+                    memcpy(tmd->save_size, exthdr + 0x1C0, 4); // get save size for CXI
+                    sha_quick(ncch->hash_exthdr, exthdr, 0x400, SHA256_MODE);
+                } else { // encrypted -> decrypt then reencrypt
+                    CryptBufferInfo info = {.setKeyY = 1, .keyslot = 0x2C, .buffer = exthdr, .size = 0x400, .mode = AES_CNT_CTRNAND_MODE};
+                    memcpy(info.keyY, ncch->signature, 16);
+                    GetNcchCtr(info.ctr, ncch, 1);
+                    CryptBuffer(&info);
+                    exthdr[0xD] |= (1<<1); // set SD flag
+                    memcpy(tmd->save_size, exthdr + 0x1C0, 4); // get save size for CXI
+                    sha_quick(ncch->hash_exthdr, exthdr, 0x400, SHA256_MODE);
                     GetNcchCtr(info.ctr, ncch, 1);
                     CryptBuffer(&info);
                 }
-                exthdr[0xD] |= (1<<1); // set SD flag
-                memcpy(tmd->save_size, exthdr + 0x1C0, 4); // get save size for CXI
-                sha_quick(ncch->hash_exthdr, exthdr, 0x400, SHA256_MODE); // fix exheader hash
-                memcpy(meta->dependencies, exthdr + 0x40, 0x180); // copy dependencies to meta
-                if (!(ncch->flags[7] & 0x04)) { // encrypted NCCH
-                    GetNcchCtr(info.ctr, ncch, 1);
-                    CryptBuffer(&info);
-                }
-            }
-            
-            // process ExeFS (for SMDH)
-            if (ncch->size_exefs > 0) {
-                u8 exefs_hdr[0x200];
-                u32 offset_exefs = ncch->offset_exefs * 0x200;
-                if (FileGetData(filename, exefs_hdr, 0x200, offset + offset_exefs) != 0x200) {
-                    Debug("Failed reading NCCH ExeFS content");
+                // inject NCCH / exthdr back to CIA file content
+                if (!FileOpen(filename))
+                    return 1;
+                if (!DebugFileWrite(ncch, 0x400, offset)) {
+                    FileClose();
                     return 1;
                 }
-                if (!(ncch->flags[7] & 0x04)) { // encrypted ExeFS
-                    info.buffer = exefs_hdr;
-                    info.size = 0x200;
-                    GetNcchCtr(info.ctr, ncch, 2);
-                    CryptBuffer(&info);
-                }
-                for (u32 j = 0; j < 10; j++) { // search for icon
-                    char* name_exefs_file = (char*) exefs_hdr + (j*0x10);
-                    u32 offset_exefs_file = getle32(exefs_hdr + (j*0x10) + 0x8) + 0x200;
-                    u32 size_exefs_file = align(getle32(exefs_hdr + (j*0x10) + 0xC), 0x10);
-                    if ((size_exefs_file > 0) && (size_exefs_file <= 0x36C0) && !(offset_exefs_file % 16) &&
-                        (strncmp(name_exefs_file, "icon", 8) == 0)) {
-                        if (FileGetData(filename, meta->smdh, size_exefs_file,
-                            offset + offset_exefs + offset_exefs_file) != size_exefs_file) {
-                            Debug("Failed reading NCCH ExeFS SMDH");
-                            return 1;
-                        }
-                        if (!(ncch->flags[7] & 0x04)) { // encrypted ExeFS SMDH
-                            info.buffer = meta->smdh;
-                            info.size = size_exefs_file;
-                            GetNcchCtr(info.ctr, ncch, 2);
-                            add_ctr(info.ctr, offset_exefs_file / 0x10);
-                            CryptBuffer(&info);
-                        }
-                        break;
-                    }
-                }
-            }
-            
-            // inject NCCH / exthdr back & append metadata
-            if (!FileOpen(filename))
-                return 1;
-            if (!DebugFileWrite(ncch, 0x400, offset) || !DebugFileWrite(meta, sizeof(CiaMeta), cia.offset_meta)) {
                 FileClose();
-                return 1;
             }
-            FileClose();
         }
         
         // (re)calculate hash
@@ -1207,7 +1156,7 @@ u32 CryptSdFiles(u32 param)
     plen = strnlen(batch_dir, 128);
     
     // setup AES key from SD
-    SetupMovableKeyY(false, 0x34, NULL);
+    SetupSdKeyY0x34(false, NULL);
     
     // main processing loop
     for (u32 s = 0; subpaths[s] != NULL; s++) {
@@ -1263,7 +1212,7 @@ u32 DecryptSdFilesDirect(u32 param)
         return 1;
     }
     
-    if (SetupMovableKeyY(true, 0x34, movable_keyY) != 0)
+    if (SetupSdKeyY0x34(true, movable_keyY) != 0)
         return 1; // movable.sed has to be present in NAND
     
     Debug("");
@@ -1479,7 +1428,30 @@ static u32 DecryptCartNcchToFile(u32 offset_cart, u32 offset_file, u32 size, u32
     return 0;
 }
 
+u32 DumpNtrGameCart(u32 param);
+u32 DumpCtrGameCart(u32 param);
+
 u32 DumpGameCart(u32 param)
+{
+    // check if cartridge inserted
+    if (REG_CARDCONF2 & 0x1) {
+        Debug("Cartridge was not detected");
+        return 1;
+    }
+    
+    // initialize cartridge
+    Cart_Init();
+    Debug("Cartridge ID: %08X", Cart_GetID());
+
+    if (Cart_GetID() & 0x10000000)
+    {
+        return DumpCtrGameCart (param);
+    }
+
+    return DumpNtrGameCart (param);
+}
+
+u32 DumpCtrGameCart(u32 param)
 {
     NcsdHeader* ncsd = (NcsdHeader*) 0x20316000;
     NcchHeader* ncch = (NcchHeader*) 0x20317000;
@@ -1490,18 +1462,7 @@ u32 DumpGameCart(u32 param)
     u64 data_size = 0;
     u64 dump_size = 0;
     u32 result = 0;
-    
-    
-    // check if cartridge inserted
-    if (REG_CARDCONF2 & 0x1) {
-        Debug("Cartridge was not detected");
-        return 1;
-    }
-    
-    // initialize cartridge
-    Cart_Init();
-    Debug("Cartridge ID: %08X", Cart_GetID());
-    
+
     // read cartridge NCCH header
     CTR_CmdReadHeader(ncch);
     if (memcmp(ncch->magic, "NCCH", 4) != 0) {
@@ -1681,6 +1642,91 @@ u32 DumpGameCart(u32 param)
     
     
     return result;
+}
+
+u32 DumpNtrGameCart(u32 param)
+{
+    char filename[64];
+    u64 cart_size = 0;
+    u64 data_size = 0;
+    u64 dump_size = 0;
+    u8* buff = BUFFER_ADDRESS;
+    u64 offset = 0x8000;
+    char name[16];
+
+    memset (buff, 0x00, 0x4000);
+
+
+    NTR_CmdReadHeader (buff);
+    if (buff[0] == 0x00)
+    {
+        Debug("Error reading cart header");
+        return 1;
+    }
+
+    memset (name, 0x00, sizeof (name));
+    memcpy (name, &buff[0x00], 12);
+    Debug("Product name: %s", name);
+
+    memset (name, 0x00, sizeof (name));
+    memcpy (name, &buff[0x0C], 4 + 2);
+    Debug("Product ID: %s", name);
+
+    cart_size = (128 * 1024) << buff[0x14];
+    data_size = *((u32*)&buff[0x80]);;
+    dump_size = (param & CD_TRIM) ? data_size : cart_size;
+    Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
+    Debug("Cartridge used size: %lluMB", data_size / 0x100000);
+    Debug("Cartridge dump size: %lluMB", dump_size / 0x100000);
+
+
+    //Unitcode (00h=NDS, 02h=NDS+DSi, 03h=DSi) (bit1=DSi)
+    if (buff[0x12] == 0x02)
+    {
+        Debug ("Hybrid(DS+DSi) cartridge was detected");
+        Debug ("This dumper supports only DS mode");
+    }
+    else if (buff[0x12] != 0x00)
+    {
+        Debug ("DSi Cartridge is not supported");
+        return 1;
+    }
+
+    if (!NTR_Secure_Init (buff, Cart_GetID()))
+    {
+        Debug("Error reading secure data");
+        return 1;
+	}
+
+    Debug("");
+    snprintf(filename, 64, "/%s%s%s.nds", GetGameDir() ? GetGameDir() : "", GetGameDir() ? "/" : "", name);
+
+    if (!DebugFileCreate(filename, true)) {
+        return 1;
+    }
+    if (!DebugFileWrite(buff, 0x8000, 0)) {
+        FileClose();
+        return 1;
+    }
+
+	u32 stop=0;
+    for (offset=0x8000;offset < dump_size;offset+=CART_CHUNK_SIZE)
+    {
+		if( (offset + CART_CHUNK_SIZE) > dump_size) stop=(offset + CART_CHUNK_SIZE)-dump_size; //correct over-sized writes with "stop" variable
+		
+		for(u32 i=0;i < CART_CHUNK_SIZE;i+=0x200){
+			NTR_CmdReadData (offset+i, buff+i);
+	    }
+        if (!DebugFileWrite((void*) buff, CART_CHUNK_SIZE-stop, offset)) {
+            FileClose();
+            return 1;
+        }
+        ShowProgress(offset, dump_size);
+    }
+	
+    FileClose ();
+    ShowProgress(0, 0);
+    return 0;
 }
 
 u32 DumpPrivateHeader(u32 param)

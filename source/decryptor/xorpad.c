@@ -239,7 +239,7 @@ u32 SdPadgen(u32 param)
     SdInfo *info = (SdInfo*) 0x20316000;
 
     // setup AES key from SD
-    SetupMovableKeyY(false, 0x34, NULL);
+    SetupSdKeyY0x34(false, NULL);
     
     if (!DebugFileOpen("SDinfo.bin"))
         return 1;
@@ -278,7 +278,7 @@ u32 SdPadgenDirect(u32 param)
     char basepath[256];
     u8 movable_keyY[16];
     
-    if (SetupMovableKeyY(true, 0x34, movable_keyY) != 0)
+    if (SetupSdKeyY0x34(true, movable_keyY) != 0)
         return 1; // movable.sed has to be present in NAND
     
     Debug("");

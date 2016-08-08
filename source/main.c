@@ -241,7 +241,7 @@ MenuInfo menu[] =
             { "GBA VC Save Dump",             &DumpGbaVcSave,         0 },
             { "GBA VC Save Inject",           &InjectGbaVcSave,       N_NANDWRITE },
             { "Update SeedDB",                &UpdateSeedDb,          0 },
-            { "Autofix CTRNAND",              &AutoFixCtrnand,        N_NANDWRITE },
+            { "Autofix CMACs",                &AutoFixCmacs,          N_NANDWRITE },
             { "NCCH FIRMs Dump",              &DumpNcchFirms,         0 },
             { "FIRM ARM9 Decryptor",          &DecryptFirmArm9File,   0 }
         }
@@ -253,7 +253,7 @@ MenuInfo menu[] =
             { "Health&Safety Dump",           &DumpHealthAndSafety,   N_EMUNAND },
             { "Health&Safety Inject",         &InjectHealthAndSafety, N_NANDWRITE | N_EMUNAND },
             { "Update SeedDB",                &UpdateSeedDb,          N_EMUNAND },
-            { "Autofix CTRNAND",              &AutoFixCtrnand,        N_NANDWRITE | N_EMUNAND },
+            { "Autofix CMACs",                &AutoFixCmacs,          N_NANDWRITE | N_EMUNAND },
             { "NCCH FIRMs Dump",              &DumpNcchFirms,         N_EMUNAND },
             { "FIRM ARM9 Decryptor",          &DecryptFirmArm9File,   0 }
         }
@@ -341,7 +341,6 @@ u32 InitializeD9()
         Debug("Initializing SD card... success");
         FileGetData("d9logo.bin", BOT_SCREEN0, 320 * 240 * 3, 0);
         memcpy(BOT_SCREEN1, BOT_SCREEN0, 320 * 240 * 3);
-        Debug("Build: %s", BUILD_NAME);
         Debug("Work directory: %s", GetWorkDir());
         Debug("Game directory: %s", GetGameDir());
         SetupSector0x96Key0x11(); // Sector0x96 key - no effect on error level
