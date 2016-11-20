@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "theme.h"
 #ifdef USE_THEME
 #include "fs.h"
