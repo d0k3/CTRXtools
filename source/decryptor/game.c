@@ -1954,6 +1954,7 @@ u32 DumpCtrGameCart(u32 param)
     
     // output some info
     Debug("Product ID: %.16s", ncch->productcode);
+    Debug("Product version: %02X", ncsd->version);
     Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);
     if (data_size > cart_size) {
@@ -1994,8 +1995,13 @@ u32 DumpCtrGameCart(u32 param)
     
     // create file, write CIA / NCSD header
     Debug("");
-    snprintf(filename, 64, "/%s%s%.16s%s.%s", GetGameDir() ? GetGameDir() : "", GetGameDir() ? "/" : "", 
-        ncch->productcode, (param & CD_DECRYPT) ? "-dec" : "", (param & CD_MAKECIA) ? "cia" : "3ds");
+    snprintf(filename, 64, "/%s%s%.16s_%02X%s.%s",
+        GetGameDir() ? GetGameDir() : "",
+        GetGameDir() ? "/" : "",
+        ncch->productcode,
+        ncsd->version,
+        (param & CD_DECRYPT) ? "-dec" : "",
+        (param & CD_MAKECIA) ? "cia" : "3ds");
     if (!FileCreate(filename, true)) {
         Debug("Could not create output file on SD");
         return 1;
@@ -2170,9 +2176,9 @@ u32 DumpTwlGameCart(u32 param)
 
     Debug("");
     snprintf(filename, 64, "/%s%s%.6s_%02X.nds",
-		GetGameDir() ? GetGameDir() : "",
-		GetGameDir() ? "/" : "",
-		(const char*)&buff[0x0C], buff[0x1E]);
+        GetGameDir() ? GetGameDir() : "",
+        GetGameDir() ? "/" : "",
+        (const char*)&buff[0x0C], buff[0x1E]);
 
     if (!DebugFileCreate(filename, true))
         return 1;
