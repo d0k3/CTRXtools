@@ -2169,8 +2169,10 @@ u32 DumpTwlGameCart(u32 param)
     }
 
     Debug("");
-    snprintf(filename, 64, "/%s%s%s%02X.nds", GetGameDir() ? GetGameDir() : "", GetGameDir() ? "/" : "",
-        (char*) &buff[0x0C], buff[0x1E]);
+    snprintf(filename, 64, "/%s%s%.6s_%02X.nds",
+		GetGameDir() ? GetGameDir() : "",
+		GetGameDir() ? "/" : "",
+		(const char*)&buff[0x0C], buff[0x1E]);
 
     if (!DebugFileCreate(filename, true))
         return 1;
