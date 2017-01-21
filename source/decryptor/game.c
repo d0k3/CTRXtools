@@ -2153,12 +2153,20 @@ u32 DumpTwlGameCart(u32 param)
         return 1;
     }
 
+    // Unitcode (00h=NDS, 02h=NDS+DSi, 03h=DSi) (bit1=DSi)
+    isDSi = (buff[0x12] != 0x00);
     Debug("Product name: %.12s", (char*) &buff[0x00]);
     Debug("Product ID: %.6s", (char*) &buff[0x0C]);
     Debug("Product version: %02u", buff[0x1E]);
 
     cart_size = (128 * 1024) << buff[0x14];
-    data_size = *((u32*)&buff[0x80]);
+    if (isDSi) {
+        // NTR used data size field does not include TWL-specific data.
+        // Use the TWL field.
+        data_size = *((u32*)&buff[0x210]);
+    } else {
+        data_size = *((u32*)&buff[0x80]);
+    }
     dump_size = (param & CD_TRIM) ? data_size : cart_size;
     Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);
@@ -2187,10 +2195,7 @@ u32 DumpTwlGameCart(u32 param)
         return 1;
     }
     
-    // Unitcode (00h=NDS, 02h=NDS+DSi, 03h=DSi) (bit1=DSi)
-    if (buff[0x12] != 0x00) {
-        isDSi = 1;
-        
+    if (isDSi) {
         // initialize cartridge
         Cart_Init();
         //Cart_GetID();
