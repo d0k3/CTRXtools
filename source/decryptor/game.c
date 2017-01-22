@@ -1954,7 +1954,7 @@ u32 DumpCtrGameCart(u32 param)
     
     // output some info
     Debug("Product ID: %.16s", ncch->productcode);
-    Debug("Product version: %02u", ncsd->version);
+    Debug("Product version: %02u", ((u8*)ncsd)[0x312]);
     Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);
     if (data_size > cart_size) {
@@ -1999,7 +1999,7 @@ u32 DumpCtrGameCart(u32 param)
         GetGameDir() ? GetGameDir() : "",
         GetGameDir() ? "/" : "",
         ncch->productcode,
-        ncsd->version,
+        ((u8*)ncsd)[0x312],	// version
         (param & CD_DECRYPT) ? "-dec" : "",
         (param & CD_MAKECIA) ? "cia" : "3ds");
     if (!FileCreate(filename, true)) {
