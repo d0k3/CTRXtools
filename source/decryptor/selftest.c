@@ -225,6 +225,7 @@ u32 SystemInfo(u32 param)
         (unsigned int) getle32(sdcid+8), (unsigned int) getle32(sdcid+12));
     
     // NAND stuff output here
+    Debug("Mfg. Date: %u/%02u/%02u", *(MFDATE) + 1900, *(MFDATE + 1), *(MFDATE + 2)); //the next 3 bytes are hours, minutes, seconds but those were ommitted due to being superfluous info
     Debug("NAND type / size: %s %s / %lluMB", (isDevkit) ? "Devkit" : "Retail", (isN3ds) ? "N3DS" : "O3DS", nand_size / 0x100000);
     Debug("Serial / region: %.15s / %s", (char*) serial, (*region < 7) ? regionstr[*region] : regionstr[7]);
     Debug("NAND CID: %08X%08X%08X%08X", getbe32(nandcid+0), getbe32(nandcid+4), getbe32(nandcid+8), getbe32(nandcid+12));
