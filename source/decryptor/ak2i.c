@@ -24,7 +24,7 @@
 u32 DumpAk2iCart(u32 param)
 {
     (void) param; // unused here
-    
+
     // check if cartridge inserted
     if (REG_CARDCONF2 & 0x1) {
         Debug("Cartridge was not detected");
@@ -45,19 +45,26 @@ u32 DumpAk2iCart(u32 param)
         return 1;
     }
 
+    char filename[64];
+    if (OutputFileNameSelector(filename, "ak2i_flash.bin", NULL) != 0)
+        return 1;
+
+    if (!DebugFileCreate(filename, true))
+        return 1;
+
     Debug("Cart: 0x%04X HW: %x", cartId, hwVer);
 
     u32 length = hwVer == 0x81 ? AK2I_81_BOOTROM_LENGTH : AK2I_44_BOOTROM_LENGTH;
 
-    u8* mem = BUFFER_ADDRESS + 0x10000;
+    u8* mem = BUFFER_ADDRESS;
 
-    Debug("Reading rom... (length 0x4000)");
+    //Debug("Reading rom... (length 0x4000)");
     AK2I_CmdReadRom(0, mem, 0x4000);
 
-    Debug("Dump rom...");
-    if (FileDumpData("ak2i_rom_0x4000.bin", mem, 0x4000) != 0x4000) {
-        Debug("Failed writing ak2i_rom_0x4000.bin");
-    }
+    //Debug("Dump rom...");
+    //if (FileDumpData("ak2i_rom_0x4000.bin", mem, 0x4000) != 0x4000) {
+    //    Debug("Failed writing ak2i_rom_0x4000.bin");
+    //}
 
     AK2I_CmdSetMapTableAddress(AK2I_MTN_NOR_OFFSET, 0);
 
@@ -81,8 +88,6 @@ u32 DumpAk2iCart(u32 param)
 
     Debug("Dump flash... (length 0x%08X)", length);
 
-    // TODO select filename
-    DebugFileCreate("ak2i_flash.bin", true);
     u8 *tmp = mem;
     for( u32 i = 0, offset = 0, read = 0; i < length; i += 512 ) {
         ShowProgress(i, length);
@@ -101,6 +106,8 @@ u32 DumpAk2iCart(u32 param)
         }
     }
     ShowProgress(0, 0);
+
+    FileClose();
 
     Debug("Done");
 
@@ -133,15 +140,18 @@ u32 FlashAk2iCart(u32 param)
 
     Debug("Cart: 0x%04X HW: %x", cartId, hwVer);
 
-    u8* buffer = BUFFER_ADDRESS + AK2I_PATCH_LENGTH;
+    char filename[64];
+    if (InputFileNameSelector(filename, "ak2i_flash.bin", NULL, NULL, 0, AK2I_PATCH_LENGTH, true) != 0)
+        return 1;
+
+    if (!DebugFileOpen(filename))
+        return 1;
+
+    u8* buffer = BUFFER_ADDRESS;
     memset(buffer, 0x41, AK2I_PATCH_LENGTH);
 
     Debug("Load data");
 
-    // TODO select filename
-    if (!DebugFileOpen("ak2i_patch.bin")) {
-        return 1;
-    }
     if (!DebugFileRead(buffer, AK2I_PATCH_LENGTH, 0)) {
         FileClose();
         return 1;
