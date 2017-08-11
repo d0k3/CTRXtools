@@ -106,22 +106,11 @@ const char *DumpGameCartFullDesc    = "Dump the inserted gamecart to the Game di
 const char *AK2iDumpDesc            = "Dump the AK2i flashcart bootrom to the Game "
                                       "directory.",
 
-           *AK2iInjectDesc          = "Inject the Ak2i flashcart bootrom from the Game "
-                                      "directory.",
+           *AK2iFlashDesc           = "Flash the Ak2i flashcart bootrom from the Game "
+                                      "directory.\n\n"
 
-           *AK2iAutoPatchDesc       = "Automatic NTRCARDHAX injection to the AK2i "
-                                      "flashcart."
-                                      
                                       "AK2i 1.41 version required. If your cart is not on "
-                                      "this version, upgrade or downgrade to it.",
-
-           *AK2iPatchAndInjectDesc  = "Patch and inject NTRCARDHAX payload to the "
-                                      "AK2i flashcart.\n\n"
-                                      
-                                      "AK2i 1.41 version required. If your cart is not on "
-                                      "this version, upgrade or downgrade to it.",
-
-           *AK2iRestoreBootromDesc  = "Restore the AK2i flashcart original bootrom.";
+                                      "this version, upgrade or downgrade to it.";
 
 
 // SysNAND/EmuNAND Backup/Restore Options
