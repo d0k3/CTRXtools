@@ -30,12 +30,12 @@ THEME	:=
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-mthumb -mthumb-interwork -flto
+ARCH	:=	-mthumb -mthumb-interwork
 
 CFLAGS	:=	-g -Wall -Wextra -Wpedantic -Wno-main -O2\
 			-march=armv5te -mtune=arm946e-s -fomit-frame-pointer\
 			-ffast-math -std=gnu11\
-			$(ARCH)
+			-fno-builtin-memcpy $(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -DARM9 -D_GNU_SOURCE
 
@@ -59,7 +59,7 @@ endif
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
 
-ASFLAGS	:=	-g $(ARCH)
+ASFLAGS	:=	-g -mcpu=arm946e-s $(ARCH)
 LDFLAGS	=	-T../link.ld -nostartfiles -g $(ARCH) -Wl,-Map,$(TARGET).map
 
 LIBS	:=
